@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import os
 import time
+import re
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 
@@ -46,18 +47,24 @@ def _normalize_reddit_subreddit(value: Optional[str]) -> Optional[str]:
     if not value:
         return None
     v = value.strip()
-    if "/r/" in v:
-        v = v.split("/r/", 1)[1]
-    if "/" in v:
-        v = v.split("/", 1)[0]
-    if "—" in v:
-        v = v.split("—")[-1].strip()
-    if "-" in v:
-        # Handles labels like "Reddit - france"
-        tail = v.split("-")[-1].strip()
-        if tail and " " not in tail:
-            v = tail
-    v = v.replace(" ", "")
+    # First, try extracting from canonical Reddit URL/path.
+    m = re.search(r"/r/([^/?#\s]+)", v, flags=re.IGNORECASE)
+    if m:
+        v = m.group(1)
+    else:
+        # Strip common labels like "Reddit - xxx" or "Reddit — xxx".
+        v = re.sub(r"^\s*reddit\s*[:\-|\u2013\u2014]+\s*", "", v, flags=re.IGNORECASE)
+        if "/" in v:
+            v = v.split("/", 1)[0]
+        # Keep last token for labels like "Tech - LocalLLaMA".
+        parts = re.split(r"[\-|\u2013\u2014]", v)
+        if len(parts) > 1:
+            tail = parts[-1].strip()
+            if tail:
+                v = tail
+
+    v = re.sub(r"\s+", "", v)
+    v = v.lstrip("r/")
     return v or None
 
 
@@ -158,6 +165,7 @@ def _run_once() -> int:
                     "country": source.country,
                     "subreddit": (
                         _normalize_reddit_subreddit(source.query)
+                        or _normalize_reddit_subreddit(source.url)
                         or _normalize_reddit_subreddit(source.name)
                     ) if source.source_type == "reddit" else None,
                     "hn_type": source.query if source.source_type == "hackernews" else "topstories",
