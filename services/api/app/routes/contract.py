@@ -38,7 +38,7 @@ async def upsert_profile(payload: ProfileUpsertPayload, db: AsyncSession = Depen
     profile.interests = payload.interests
     profile.muted_sources = payload.muted_sources
     profile.languages = payload.languages
-    profile.metadata = payload.metadata
+    profile.profile_metadata = payload.metadata
 
     await db.commit()
     await db.refresh(profile)
@@ -48,7 +48,7 @@ async def upsert_profile(payload: ProfileUpsertPayload, db: AsyncSession = Depen
         "interests": profile.interests or [],
         "muted_sources": profile.muted_sources or [],
         "languages": profile.languages or [],
-        "metadata": profile.metadata or {},
+        "metadata": profile.profile_metadata or {},
     }
 
 
@@ -64,7 +64,7 @@ async def get_profile(profile_id: str, db: AsyncSession = Depends(get_db)):
         "interests": profile.interests or [],
         "muted_sources": profile.muted_sources or [],
         "languages": profile.languages or [],
-        "metadata": profile.metadata or {},
+        "metadata": profile.profile_metadata or {},
         "updated_at": profile.updated_at.isoformat() if profile.updated_at else None,
     }
 

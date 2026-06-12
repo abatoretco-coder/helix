@@ -195,7 +195,7 @@ class UserProfile(Base):
     interests     = Column(ARRAY(Text), default=[])
     muted_sources = Column(ARRAY(Text), default=[])
     languages     = Column(ARRAY(Text), default=[])
-    metadata      = Column(JSONB)
+    profile_metadata = Column("metadata", JSONB)
     created_at    = Column(DateTime, server_default=func.now())
     updated_at    = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
