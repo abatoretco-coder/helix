@@ -320,6 +320,39 @@ sources:
     extraction_strategy: rss
     enabled: true
 
+  - name: ArXiv NLP (cs.CL)
+    type: rss
+    url: https://rss.arxiv.org/rss/cs.CL
+    category: ai
+    language: en
+    country: global
+    priority: 2
+    refresh_minutes: 360
+    extraction_strategy: rss
+    enabled: true
+
+  - name: Hugging Face Blog
+    type: rss
+    url: https://huggingface.co/blog/feed.xml
+    category: ai
+    language: en
+    country: global
+    priority: 2
+    refresh_minutes: 120
+    extraction_strategy: rss_then_article
+    enabled: true
+
+  - name: GitHub Changelog
+    type: rss
+    url: https://github.blog/changelog/feed/
+    category: tech
+    language: en
+    country: global
+    priority: 3
+    refresh_minutes: 180
+    extraction_strategy: rss_then_article
+    enabled: true
+
   - name: Le Monde Informatique
     type: rss
     url: https://www.lemondeinformatique.fr/flux-rss/thematique/toute-l-informatique/rss.xml

@@ -182,6 +182,21 @@ curl -X POST http://192.168.1.50:8000/jarvis/query \
 
 Full OpenAPI docs: http://192.168.1.50:8000/docs
 
+### v1 Contract (Jarvis / service-to-service)
+
+- `GET /v1/health`
+- `POST /v1/jarvis/query`
+- `GET /v1/search?q=...`
+- `GET /v1/briefings/daily`
+- `GET /v1/pipeline/metrics`
+- `GET /v1/sources/status`
+
+If `REQUIRE_API_TOKEN=true`, provide header:
+
+```bash
+X-API-Token: <HELIX_API_TOKEN>
+```
+
 ---
 
 ## 🎯 Features
@@ -195,6 +210,8 @@ Full OpenAPI docs: http://192.168.1.50:8000/docs
 - ✅ **Personal scoring** — rank articles by your interests
 - ✅ **Daily briefings** — automated newsletter generation
 - ✅ **Jarvis integration** — answer natural language questions
+- ✅ **Versioned API contract** — `/v1/*` endpoints for Jarvis and other clients
+- ✅ **Operational visibility** — pipeline metrics and source status endpoints
 - ✅ **All data local** — nothing leaves your NAS
 
 ---

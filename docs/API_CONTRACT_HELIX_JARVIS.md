@@ -1,7 +1,7 @@
 # Contrat API Helix <-> Jarvis
 
 Date: 2026-06-12
-Version cible: v1 (spec)
+Version cible: v1 (implemented)
 
 ## 1) Principes
 - Helix expose un backend news independant du frontend.
@@ -15,6 +15,12 @@ Version cible: v1 (spec)
 - GET /clusters
 - GET /briefings/daily
 - POST /jarvis/query
+- GET /v1/health
+- POST /v1/jarvis/query
+- GET /v1/search
+- GET /v1/briefings/daily
+- GET /v1/pipeline/metrics
+- GET /v1/sources/status
 
 ## 3) Contrat minimal recommande v1
 
@@ -68,7 +74,14 @@ GET /v1/briefings/daily?profile=jarvis_default
 - GET /v1/pipeline/metrics (lag + volumes)
 
 ## 5) Exigences non-fonctionnelles
-- Auth service-to-service (JWT ou token interne)
+- Auth service-to-service (token interne X-API-Token implemente)
 - Correlation ID par requete
 - Timeouts stricts et retries bornes
 - Versionnage contractuel explicite (/v1)
+
+## 6) Auth contractuelle v1
+- Variables:
+  - REQUIRE_API_TOKEN=true|false
+  - HELIX_API_TOKEN=<secret>
+- Header attendu quand REQUIRE_API_TOKEN=true:
+  - X-API-Token: <HELIX_API_TOKEN>
