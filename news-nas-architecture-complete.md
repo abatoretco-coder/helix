@@ -464,7 +464,7 @@ MEILI_MASTER_KEY=change_me_meili
 ## 5. Structure de projet
 
 ```text
-news-nas/
+helix/
 │
 ├── README.md
 ├── docker-compose.yml
@@ -2781,7 +2781,7 @@ Et obtenir :
 Commencer par ce squelette :
 
 ```text
-news-nas/
+helix/
 ├── docker-compose.yml
 ├── .env
 ├── config/sources.yaml

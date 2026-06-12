@@ -19,7 +19,6 @@ node_modules/
 # Secrets and local env
 .env
 *.env.local
-news-nas/.env
 
 # Runtime data (containers)
-news-nas/data/
+data/

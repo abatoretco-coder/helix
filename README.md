@@ -46,8 +46,8 @@ RSS/APIs → Collectors → Raw Items (Redis queue)
 
 ```bash
 cd /mnt/nas/volume1  # or wherever on your NAS
-git clone <repo-url> news-nas
-cd news-nas
+git clone <repo-url> helix
+cd helix
 ```
 
 ### 2. Configure
@@ -76,9 +76,9 @@ Wait 5-10 minutes for everything to stabilize.
 
 ### 4. Access
 
-- **Dashboard**: http://192.168.1.50:3000
+- **Dashboard**: http://192.168.1.50:${DASHBOARD_PORT:-3000}
 - **API Docs**: http://192.168.1.50:8000/docs
-- **FreshRSS**: http://192.168.1.50:8080
+- **FreshRSS**: http://192.168.1.50:${FRESHRSS_PORT:-8080}
 - **Meilisearch**: http://192.168.1.50:7700
 - **MinIO Console**: http://192.168.1.50:9001
 
@@ -88,15 +88,15 @@ Wait 5-10 minutes for everything to stabilize.
 
 | Service | Port | Role |
 |---------|------|------|
-| PostgreSQL | 5432 | Articles, metadata |
-| Redis | 6379 | Queue for workers |
+| PostgreSQL | `${POSTGRES_PORT:-5432}` | Articles, metadata |
+| Redis | `${REDIS_PORT:-6379}` | Queue for workers |
 | MinIO | 9000/9001 | Raw HTML/JSON storage |
 | Meilisearch | 7700 | Full-text search |
-| FreshRSS | 8080 | RSS cockpit + UI |
+| FreshRSS | `${FRESHRSS_PORT:-8080}` | RSS cockpit + UI |
 | morss | 8081 | RSS enrichment proxy |
 | Ollama | 11434 | Local LLM (embeddings, summaries) |
 | API | 8000 | FastAPI backend |
-| Dashboard | 3000 | Next.js frontend |
+| Dashboard | `${DASHBOARD_PORT:-3000}` | Next.js frontend |
 
 ---
 
