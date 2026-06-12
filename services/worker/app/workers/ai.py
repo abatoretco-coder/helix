@@ -116,16 +116,19 @@ def _process_article(article_id: int) -> None:
         except Exception as exc:
             log.warning("meili_index_error", article_id=article_id, error=str(exc))
 
-        # 8. Push to clustering queue
-        enqueue("cluster", str(article_id))
-
-        # 9. Update raw_item status
+        # 8. Update raw_item status
         if article.raw_item_id:
             mark_raw_item_status(session, article.raw_item_id, "ai_processed")
 
         duration_ms = int((time.monotonic() - t0) * 1000)
         log_processing(session, "article", article_id, "ai", "success",
                        f"cat={category} score={scores['final_score']}", duration_ms=duration_ms)
+
+        # Commit DB state before queueing clustering to avoid race conditions.
+        session.commit()
+
+        # 9. Push to clustering queue
+        enqueue("cluster", str(article_id))
         log.info("ai_done", article_id=article_id, category=category,
                  score=scores["final_score"], ms=duration_ms)
 
