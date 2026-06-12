@@ -192,6 +192,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      minio:
+        condition: service_healthy
+      morss:
+        condition: service_started
     environment:
       DATABASE_URL: postgresql+asyncpg://news:${POSTGRES_PASSWORD}@postgres:5432/newsdb
       REDIS_URL: redis://redis:6379/0
@@ -217,6 +221,8 @@ services:
         condition: service_healthy
       meilisearch:
         condition: service_healthy
+      ollama:
+        condition: service_started
     environment:
       DATABASE_URL: postgresql+asyncpg://news:${POSTGRES_PASSWORD}@postgres:5432/newsdb
       REDIS_URL: redis://redis:6379/0
@@ -272,6 +278,31 @@ services:
       DATABASE_URL: postgresql+asyncpg://news:${POSTGRES_PASSWORD}@postgres:5432/newsdb
       REDIS_URL: redis://redis:6379/0
       OLLAMA_URL: http://ollama:11434
+      APP_ENV: production
+    volumes:
+      - ./config:/app/config:ro
+
+  # ── Scheduler worker ──────────────────────────────────────────────────────
+
+  worker_scheduler:
+    build:
+      context: ./services/worker
+      dockerfile: Dockerfile
+    container_name: news_worker_scheduler
+    restart: unless-stopped
+    command: python -m app.workers.scheduler
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://news:${POSTGRES_PASSWORD}@postgres:5432/newsdb
+      REDIS_URL: redis://redis:6379/0
+      SCHEDULER_TICK_SECONDS: ${SCHEDULER_TICK_SECONDS:-30}
+      SCHEDULER_ENABLE_DAILY_BRIEFING: ${SCHEDULER_ENABLE_DAILY_BRIEFING:-true}
+      SCHEDULER_BRIEFING_HOUR_UTC: ${SCHEDULER_BRIEFING_HOUR_UTC:-6}
+      SCHEDULER_BRIEFING_CATEGORY: ${SCHEDULER_BRIEFING_CATEGORY:-all}
       APP_ENV: production
     volumes:
       - ./config:/app/config:ro

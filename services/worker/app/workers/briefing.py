@@ -21,10 +21,26 @@ BRIEFING_ITEMS_LIMIT = 10
 
 def _parse_payload(payload: str) -> tuple[str, date, str]:
     parts = payload.strip().split(":", 2)
-    if len(parts) != 3:
+    if len(parts) not in (2, 3):
         raise ValueError(f"invalid payload format: {payload}")
-    period, raw_date, category = parts
-    return period, date.fromisoformat(raw_date), category
+
+    if len(parts) == 2:
+        period, category = parts
+        raw_date = ""
+    else:
+        period, raw_date, category = parts
+
+    raw_date = raw_date.strip()
+    if raw_date:
+        try:
+            period_date = date.fromisoformat(raw_date)
+        except ValueError:
+            period_date = datetime.now(timezone.utc).date()
+            log.warning("briefing_invalid_date_fallback", raw_date=raw_date, fallback=period_date.isoformat())
+    else:
+        period_date = datetime.now(timezone.utc).date()
+
+    return period.strip(), period_date, (category.strip() or "all")
 
 
 def _select_articles(session, period_date: date, category: str) -> list[Article]:

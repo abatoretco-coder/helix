@@ -131,7 +131,7 @@ def _process_article(article_id: int) -> None:
             log_processing(session, "article", article_id, "cluster", "skip", "missing article_ai")
             return
 
-        if not ai.embedding:
+        if ai.embedding is None:
             log.warning("cluster_missing_embedding", article_id=article_id)
             log_processing(session, "article", article_id, "cluster", "skip", "missing embedding")
             return

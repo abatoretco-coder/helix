@@ -49,6 +49,27 @@ check_post() {
   run_http "POST" "${API_BASE}${path}"
 }
 
+http_status() {
+  local method="$1"
+  local path="$2"
+  local url="${API_BASE}${path}"
+
+  if command -v curl >/dev/null 2>&1; then
+    if [ "$method" = "GET" ]; then
+      curl -sS -o /dev/null -w "%{http_code}" "${AUTH_HEADER[@]}" "$url"
+    else
+      curl -sS -o /dev/null -w "%{http_code}" -X "$method" "${AUTH_HEADER[@]}" "$url"
+    fi
+    return
+  fi
+
+  if [ "$method" = "GET" ]; then
+    docker compose exec -T api curl -sS -o /dev/null -w "%{http_code}" "${AUTH_HEADER[@]}" "$url"
+  else
+    docker compose exec -T api curl -sS -o /dev/null -w "%{http_code}" -X "$method" "${AUTH_HEADER[@]}" "$url"
+  fi
+}
+
 echo "[smoke] API base: ${API_BASE}"
 check_get "/health"
 check_get "/v1/health"
@@ -57,6 +78,17 @@ check_get "/articles?limit=1"
 check_get "/search?q=test"
 check_get "/clusters"
 check_post "/briefings/generate?period=daily&category=all"
+
+echo "[smoke] GET /briefings/daily (non-fatal when no data yet)"
+briefing_status="$(http_status "GET" "/briefings/daily")"
+if [ "$briefing_status" = "200" ]; then
+  echo "[smoke] briefing available"
+elif [ "$briefing_status" = "404" ]; then
+  echo "[smoke][warn] no briefing data yet (acceptable on fresh install)"
+else
+  echo "[smoke][error] unexpected status for /briefings/daily: $briefing_status"
+  exit 1
+fi
 
 echo "[smoke] checking container runtime"
 required_services=(
@@ -70,6 +102,7 @@ required_services=(
   worker_ai
   worker_cluster
   worker_briefing
+  worker_scheduler
 )
 
 running_services="$(docker compose ps --services --filter status=running)"
