@@ -54,7 +54,7 @@ async def pipeline_metrics(db: AsyncSession = Depends(get_db)):
     }
 
 
-@router.get("/sources/status")
+@router.get("/pipeline/sources-status")
 async def sources_status(
     limit: int = Query(default=100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),

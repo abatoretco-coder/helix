@@ -53,6 +53,7 @@ Construire un backend news personnalise, stable et interfacable, expose via cont
 - [x] API v1 exposee en parallele de l'API legacy
 - [x] Auth token configurable sur endpoints /v1
 - [x] Endpoints operations: /pipeline/metrics et /sources/status
+- [x] Endpoints operations: /pipeline/metrics et /pipeline/sources-status
 - [x] Nouvelles sources validees et ajoutees: Hugging Face Blog, GitHub Changelog, ArXiv cs.CL
 
 ## 5) Definition de done backend Jarvis-ready

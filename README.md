@@ -189,7 +189,7 @@ Full OpenAPI docs: http://192.168.1.50:8000/docs
 - `GET /v1/search?q=...`
 - `GET /v1/briefings/daily`
 - `GET /v1/pipeline/metrics`
-- `GET /v1/sources/status`
+- `GET /v1/pipeline/sources-status`
 
 If `REQUIRE_API_TOKEN=true`, provide header:
 

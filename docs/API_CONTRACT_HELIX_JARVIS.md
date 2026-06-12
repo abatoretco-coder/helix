@@ -20,7 +20,7 @@ Version cible: v1 (implemented)
 - GET /v1/search
 - GET /v1/briefings/daily
 - GET /v1/pipeline/metrics
-- GET /v1/sources/status
+- GET /v1/pipeline/sources-status
 
 ## 3) Contrat minimal recommande v1
 
@@ -70,7 +70,7 @@ GET /v1/briefings/daily?profile=jarvis_default
 ## 4) Extension contrat recommandee
 - POST /v1/profiles/upsert (preferences utilisateur)
 - POST /v1/feedback (signal explicite: utile/pas utile)
-- GET /v1/sources/status (sante ingestion)
+- GET /v1/pipeline/sources-status (sante ingestion)
 - GET /v1/pipeline/metrics (lag + volumes)
 
 ## 5) Exigences non-fonctionnelles
