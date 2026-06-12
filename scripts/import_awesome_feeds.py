@@ -107,6 +107,7 @@ def main():
     parser.add_argument("--output", default="config/sources.yaml")
     parser.add_argument("--dry-run", action="store_true", help="Print what would be added without writing")
     parser.add_argument("--limit", type=int, default=200, help="Max feeds to add per run")
+    parser.add_argument("--all-categories", action="store_true", help="Import from all OPML categories, not only the curated subset")
     args = parser.parse_args()
 
     output_path = Path(args.output)
@@ -133,9 +134,11 @@ def main():
         if category is None:
             # Try grandparent
             category = CATEGORY_MAP.get(opml_path.parent.parent.name.lower())
-        if category is None and folder not in WANTED_CATEGORIES:
+        if (not args.all_categories) and category is None and folder not in WANTED_CATEGORIES:
             continue  # Skip unrelated categories
 
+        if category is None:
+            category = opml_path.parent.parent.name.lower().replace("_", "-") if args.all_categories else "general"
         category = category or "general"
         sources = _parse_opml(opml_path, category)
 

@@ -81,6 +81,7 @@ Wait 5-10 minutes for everything to stabilize.
 - **FreshRSS**: http://192.168.1.50:${FRESHRSS_PORT:-8080}
 - **Meilisearch**: http://192.168.1.50:7700
 - **MinIO Console**: http://192.168.1.50:9001
+- **Prometheus**: http://192.168.1.50:${PROMETHEUS_PORT:-19090}
 
 ---
 
@@ -255,9 +256,32 @@ docker compose exec -T api alembic upgrade head
 ## 📈 Observability
 
 - Prometheus-compatible metrics endpoint: `GET /metrics`
+- Prometheus server: `http://<NAS_IP>:${PROMETHEUS_PORT:-19090}`
 - Operational JSON endpoints:
   - `GET /v1/pipeline/metrics`
   - `GET /v1/pipeline/sources-status`
+
+### Grafana (existing NAS instance)
+
+1. Add Prometheus datasource in Grafana pointing to:
+
+```text
+http://<NAS_IP>:${PROMETHEUS_PORT:-19090}
+```
+
+2. Import the dashboard JSON:
+
+```bash
+GRAFANA_URL=http://<grafana-host>:3000 \
+GRAFANA_TOKEN=<service-account-token> \
+./scripts/import_grafana_dashboard.sh
+```
+
+Dashboard file:
+
+```text
+monitoring/grafana/helix-news-overview.json
+```
 
 ## 💾 Backup / Restore
 

@@ -1,399 +1,1834 @@
 sources:
-
-  # ── Hacker News ───────────────────────────────────────────────────────────
-  - name: Hacker News
-    type: rss
-    url: https://news.ycombinator.com/rss
-    category: tech
-    language: en
-    country: global
-    priority: 1
-    refresh_minutes: 15
-    extraction_strategy: rss_then_article
-    enabled: true
-
-  # ── Google News — AI / LLM ────────────────────────────────────────────────
-  - name: Google News — Intelligence Artificielle FR
-    type: google_news_rss
-    query: "intelligence artificielle"
-    language: fr
-    country: FR
-    category: ai
-    priority: 1
-    refresh_minutes: 30
-    extraction_strategy: article
-    enabled: true
-
-  - name: Google News — Local LLM EN
-    type: google_news_rss
-    query: "local llm open source"
-    language: en
-    country: global
-    category: ai
-    priority: 1
-    refresh_minutes: 30
-    extraction_strategy: article
-    enabled: true
-
-  - name: Google News — AI Agents EN
-    type: google_news_rss
-    query: "AI agents autonomous"
-    language: en
-    country: global
-    category: ai
-    priority: 1
-    refresh_minutes: 30
-    extraction_strategy: article
-    enabled: true
-
-  - name: Google News — OpenAI Mistral Anthropic
-    type: google_news_rss
-    query: "OpenAI OR Mistral OR Anthropic OR Gemini"
-    language: en
-    country: global
-    category: ai
-    priority: 1
-    refresh_minutes: 30
-    extraction_strategy: article
-    enabled: true
-
-  # ── Google News — Supply Chain / Pharma ───────────────────────────────────
-  - name: Google News — Supply Chain EN
-    type: google_news_rss
-    query: "supply chain logistics"
-    language: en
-    country: global
-    category: supply_chain
-    priority: 1
-    refresh_minutes: 30
-    extraction_strategy: article
-    enabled: true
-
-  - name: Google News — Pharma Logistics FR
-    type: google_news_rss
-    query: "logistique pharmaceutique distribution"
-    language: fr
-    country: FR
-    category: pharma
-    priority: 1
-    refresh_minutes: 60
-    extraction_strategy: article
-    enabled: true
-
-  - name: Google News — Transport Décarbonation
-    type: google_news_rss
-    query: "transport decarbonation carbone logistique"
-    language: fr
-    country: FR
-    category: climate
-    priority: 2
-    refresh_minutes: 60
-    extraction_strategy: article
-    enabled: true
-
-  - name: Google News — Warehouse Automation
-    type: google_news_rss
-    query: "warehouse automation robotics"
-    language: en
-    country: global
-    category: supply_chain
-    priority: 2
-    refresh_minutes: 60
-    extraction_strategy: article
-    enabled: true
-
-  # ── Google News — Tech / Géopolitique ─────────────────────────────────────
-  - name: Google News — Réglementation IA Europe
-    type: google_news_rss
-    query: "AI Act Europe réglementation IA"
-    language: fr
-    country: FR
-    category: regulation
-    priority: 2
-    refresh_minutes: 60
-    extraction_strategy: article
-    enabled: true
-
-  - name: Google News — Géopolitique FR
-    type: google_news_rss
-    query: "géopolitique relations internationales"
-    language: fr
-    country: FR
-    category: geopolitics
-    priority: 2
-    refresh_minutes: 60
-    extraction_strategy: article
-    enabled: true
-
-  - name: Google News — Startups SaaS
-    type: google_news_rss
-    query: "startups SaaS funding"
-    language: en
-    country: global
-    category: startups
-    priority: 2
-    refresh_minutes: 60
-    extraction_strategy: article
-    enabled: true
-
-  - name: Google News — Canada Travel
-    type: google_news_rss
-    query: "Canada travel visa immigration"
-    language: en
-    country: CA
-    category: travel
-    priority: 3
-    refresh_minutes: 120
-    extraction_strategy: article
-    enabled: true
-
-  # ── Reddit ────────────────────────────────────────────────────────────────
-  - name: Reddit — LocalLLaMA
-    type: reddit
-    subreddit: LocalLLaMA
-    category: ai
-    language: en
-    country: global
-    priority: 1
-    refresh_minutes: 30
-    extraction_strategy: reddit
-    enabled: true
-
-  - name: Reddit — MachineLearning
-    type: reddit
-    subreddit: MachineLearning
-    category: ai
-    language: en
-    country: global
-    priority: 2
-    refresh_minutes: 60
-    extraction_strategy: reddit
-    enabled: true
-
-  - name: Reddit — selfhosted
-    type: reddit
-    subreddit: selfhosted
-    category: tech
-    language: en
-    country: global
-    priority: 2
-    refresh_minutes: 60
-    extraction_strategy: reddit
-    enabled: true
-
-  - name: Reddit — supplychain
-    type: reddit
-    subreddit: supplychain
-    category: supply_chain
-    language: en
-    country: global
-    priority: 2
-    refresh_minutes: 60
-    extraction_strategy: reddit
-    enabled: true
-
-  - name: Reddit — france
-    type: reddit
-    subreddit: france
-    category: geopolitics
-    language: fr
-    country: FR
-    priority: 3
-    refresh_minutes: 120
-    extraction_strategy: reddit
-    enabled: true
-
-  - name: Reddit — cybersecurity
-    type: reddit
-    subreddit: cybersecurity
-    category: tech
-    language: en
-    country: global
-    priority: 2
-    refresh_minutes: 60
-    extraction_strategy: reddit
-    enabled: true
-
-  # ── Hacker News API ───────────────────────────────────────────────────────
-  - name: Hacker News — Top Stories
-    type: hackernews
-    hn_type: topstories
-    category: tech
-    language: en
-    country: global
-    priority: 1
-    refresh_minutes: 15
-    extraction_strategy: rss_then_article
-    enabled: true
-
-  - name: Hacker News — Best Stories
-    type: hackernews
-    hn_type: beststories
-    category: tech
-    language: en
-    country: global
-    priority: 2
-    refresh_minutes: 60
-    extraction_strategy: rss_then_article
-    enabled: true
-
-  # ── GitHub ────────────────────────────────────────────────────────────────
-  - name: GitHub Trending — AI Python
-    type: github_trending
-    language_filter: python
-    topic: artificial-intelligence
-    category: ai
-    priority: 2
-    refresh_minutes: 360
-    extraction_strategy: github
-    enabled: true
-
-  - name: GitHub Trending — LLM
-    type: github_trending
-    topic: llm
-    category: ai
-    priority: 2
-    refresh_minutes: 360
-    extraction_strategy: github
-    enabled: true
-
-  - name: GitHub Trending — RAG
-    type: github_trending
-    topic: rag
-    category: ai
-    priority: 2
-    refresh_minutes: 360
-    extraction_strategy: github
-    enabled: true
-
-  - name: GitHub Trending — Self-hosted
-    type: github_trending
-    topic: self-hosted
-    category: tech
-    priority: 3
-    refresh_minutes: 360
-    extraction_strategy: github
-    enabled: true
-
-  # ── RSS Media tech ────────────────────────────────────────────────────────
-  - name: The Verge
-    type: rss
-    url: https://www.theverge.com/rss/index.xml
-    category: tech
-    language: en
-    country: US
-    priority: 1
-    refresh_minutes: 30
-    extraction_strategy: rss_then_article
-    enabled: true
-
-  - name: Wired
-    type: rss
-    url: https://www.wired.com/feed/rss
-    category: tech
-    language: en
-    country: US
-    priority: 2
-    refresh_minutes: 60
-    extraction_strategy: rss_then_article
-    enabled: true
-
-  - name: ArXiv AI (cs.AI)
-    type: rss
-    url: https://rss.arxiv.org/rss/cs.AI
-    category: ai
-    language: en
-    country: global
-    priority: 2
-    refresh_minutes: 360
-    extraction_strategy: rss
-    enabled: true
-
-  - name: ArXiv ML (cs.LG)
-    type: rss
-    url: https://rss.arxiv.org/rss/cs.LG
-    category: ai
-    language: en
-    country: global
-    priority: 2
-    refresh_minutes: 360
-    extraction_strategy: rss
-    enabled: true
-
-  - name: ArXiv NLP (cs.CL)
-    type: rss
-    url: https://rss.arxiv.org/rss/cs.CL
-    category: ai
-    language: en
-    country: global
-    priority: 2
-    refresh_minutes: 360
-    extraction_strategy: rss
-    enabled: true
-
-  - name: Hugging Face Blog
-    type: rss
-    url: https://huggingface.co/blog/feed.xml
-    category: ai
-    language: en
-    country: global
-    priority: 2
-    refresh_minutes: 120
-    extraction_strategy: rss_then_article
-    enabled: true
-
-  - name: GitHub Changelog
-    type: rss
-    url: https://github.blog/changelog/feed/
-    category: tech
-    language: en
-    country: global
-    priority: 3
-    refresh_minutes: 180
-    extraction_strategy: rss_then_article
-    enabled: true
-
-  - name: Le Monde Informatique
-    type: rss
-    url: https://www.lemondeinformatique.fr/flux-rss/thematique/toute-l-informatique/rss.xml
-    category: tech
-    language: fr
-    country: FR
-    priority: 2
-    refresh_minutes: 60
-    extraction_strategy: rss_then_article
-    enabled: true
-
-  - name: Journal du Net
-    type: rss
-    url: https://www.journaldunet.com/rss/all
-    category: tech
-    language: fr
-    country: FR
-    priority: 2
-    refresh_minutes: 60
-    extraction_strategy: rss_then_article
-    enabled: true
-
-  # ── YouTube (disabled by default — need channel IDs) ─────────────────────
-  - name: Yannic Kilcher
-    type: youtube_channel
-    channel_id: UCZHmQk67mSJgfCCTn7xBfew
-    category: ai
-    language: en
-    country: global
-    priority: 3
-    refresh_minutes: 360
-    extraction_strategy: youtube
-    enabled: false
-
-  - name: Two Minute Papers
-    type: youtube_channel
-    channel_id: UCbfYPyITQ-7l4upoX8nvctg
-    category: ai
-    language: en
-    country: global
-    priority: 3
-    refresh_minutes: 360
-    extraction_strategy: youtube
-    enabled: false
+- name: Hacker News
+  type: rss
+  url: https://news.ycombinator.com/rss
+  category: tech
+  language: en
+  country: global
+  priority: 1
+  refresh_minutes: 15
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News — Intelligence Artificielle FR
+  type: google_news_rss
+  query: intelligence artificielle
+  language: fr
+  country: FR
+  category: ai
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: article
+  enabled: true
+- name: Google News — Local LLM EN
+  type: google_news_rss
+  query: local llm open source
+  language: en
+  country: global
+  category: ai
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: article
+  enabled: true
+- name: Google News — AI Agents EN
+  type: google_news_rss
+  query: AI agents autonomous
+  language: en
+  country: global
+  category: ai
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: article
+  enabled: true
+- name: Google News — OpenAI Mistral Anthropic
+  type: google_news_rss
+  query: OpenAI OR Mistral OR Anthropic OR Gemini
+  language: en
+  country: global
+  category: ai
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: article
+  enabled: true
+- name: Google News — Supply Chain EN
+  type: google_news_rss
+  query: supply chain logistics
+  language: en
+  country: global
+  category: supply_chain
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: article
+  enabled: true
+- name: Google News — Pharma Logistics FR
+  type: google_news_rss
+  query: logistique pharmaceutique distribution
+  language: fr
+  country: FR
+  category: pharma
+  priority: 1
+  refresh_minutes: 60
+  extraction_strategy: article
+  enabled: true
+- name: Google News — Transport Décarbonation
+  type: google_news_rss
+  query: transport decarbonation carbone logistique
+  language: fr
+  country: FR
+  category: climate
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: article
+  enabled: true
+- name: Google News — Warehouse Automation
+  type: google_news_rss
+  query: warehouse automation robotics
+  language: en
+  country: global
+  category: supply_chain
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: article
+  enabled: true
+- name: Google News — Réglementation IA Europe
+  type: google_news_rss
+  query: AI Act Europe réglementation IA
+  language: fr
+  country: FR
+  category: regulation
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: article
+  enabled: true
+- name: Google News — Géopolitique FR
+  type: google_news_rss
+  query: géopolitique relations internationales
+  language: fr
+  country: FR
+  category: geopolitics
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: article
+  enabled: true
+- name: Google News — Startups SaaS
+  type: google_news_rss
+  query: startups SaaS funding
+  language: en
+  country: global
+  category: startups
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: article
+  enabled: true
+- name: Google News — Canada Travel
+  type: google_news_rss
+  query: Canada travel visa immigration
+  language: en
+  country: CA
+  category: travel
+  priority: 3
+  refresh_minutes: 120
+  extraction_strategy: article
+  enabled: true
+- name: Reddit — LocalLLaMA
+  type: reddit
+  subreddit: LocalLLaMA
+  category: ai
+  language: en
+  country: global
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: reddit
+  enabled: true
+- name: Reddit — MachineLearning
+  type: reddit
+  subreddit: MachineLearning
+  category: ai
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: reddit
+  enabled: true
+- name: Reddit — selfhosted
+  type: reddit
+  subreddit: selfhosted
+  category: tech
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: reddit
+  enabled: true
+- name: Reddit — supplychain
+  type: reddit
+  subreddit: supplychain
+  category: supply_chain
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: reddit
+  enabled: true
+- name: Reddit — france
+  type: reddit
+  subreddit: france
+  category: geopolitics
+  language: fr
+  country: FR
+  priority: 3
+  refresh_minutes: 120
+  extraction_strategy: reddit
+  enabled: true
+- name: Reddit — cybersecurity
+  type: reddit
+  subreddit: cybersecurity
+  category: tech
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: reddit
+  enabled: true
+- name: Hacker News — Top Stories
+  type: hackernews
+  hn_type: topstories
+  category: tech
+  language: en
+  country: global
+  priority: 1
+  refresh_minutes: 15
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Hacker News — Best Stories
+  type: hackernews
+  hn_type: beststories
+  category: tech
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: GitHub Trending — AI Python
+  type: github_trending
+  language_filter: python
+  topic: artificial-intelligence
+  category: ai
+  priority: 2
+  refresh_minutes: 360
+  extraction_strategy: github
+  enabled: true
+- name: GitHub Trending — LLM
+  type: github_trending
+  topic: llm
+  category: ai
+  priority: 2
+  refresh_minutes: 360
+  extraction_strategy: github
+  enabled: true
+- name: GitHub Trending — RAG
+  type: github_trending
+  topic: rag
+  category: ai
+  priority: 2
+  refresh_minutes: 360
+  extraction_strategy: github
+  enabled: true
+- name: GitHub Trending — Self-hosted
+  type: github_trending
+  topic: self-hosted
+  category: tech
+  priority: 3
+  refresh_minutes: 360
+  extraction_strategy: github
+  enabled: true
+- name: The Verge
+  type: rss
+  url: https://www.theverge.com/rss/index.xml
+  category: tech
+  language: en
+  country: US
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Wired
+  type: rss
+  url: https://www.wired.com/feed/rss
+  category: tech
+  language: en
+  country: US
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: ArXiv AI (cs.AI)
+  type: rss
+  url: https://rss.arxiv.org/rss/cs.AI
+  category: ai
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 360
+  extraction_strategy: rss
+  enabled: true
+- name: ArXiv ML (cs.LG)
+  type: rss
+  url: https://rss.arxiv.org/rss/cs.LG
+  category: ai
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 360
+  extraction_strategy: rss
+  enabled: true
+- name: ArXiv NLP (cs.CL)
+  type: rss
+  url: https://rss.arxiv.org/rss/cs.CL
+  category: ai
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 360
+  extraction_strategy: rss
+  enabled: true
+- name: Hugging Face Blog
+  type: rss
+  url: https://huggingface.co/blog/feed.xml
+  category: ai
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 120
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: GitHub Changelog
+  type: rss
+  url: https://github.blog/changelog/feed/
+  category: tech
+  language: en
+  country: global
+  priority: 3
+  refresh_minutes: 180
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Le Monde Informatique
+  type: rss
+  url: https://www.lemondeinformatique.fr/flux-rss/thematique/toute-l-informatique/rss.xml
+  category: tech
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Journal du Net
+  type: rss
+  url: https://www.journaldunet.com/rss/all
+  category: tech
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Yannic Kilcher
+  type: youtube_channel
+  channel_id: UCZHmQk67mSJgfCCTn7xBfew
+  category: ai
+  language: en
+  country: global
+  priority: 3
+  refresh_minutes: 360
+  extraction_strategy: youtube
+  enabled: false
+- name: Two Minute Papers
+  type: youtube_channel
+  channel_id: UCbfYPyITQ-7l4upoX8nvctg
+  category: ai
+  language: en
+  country: global
+  priority: 3
+  refresh_minutes: 360
+  extraction_strategy: youtube
+  enabled: false
+- name: Folha de S.Paulo - Em cima da hora - Principal
+  type: rss
+  url: https://feeds.folha.uol.com.br/emcimadahora/rss091.xml
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Portal EBC - RSS
+  type: rss
+  url: http://www.ebc.com.br/rss/feed.xml
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: R7 - Notícias
+  type: rss
+  url: https://noticias.r7.com/feed.xml
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: UOL
+  type: rss
+  url: http://rss.home.uol.com.br/index.xml
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: The Rio Times
+  type: rss
+  url: https://riotimesonline.com/feed/
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Brasil Wire
+  type: rss
+  url: http://www.brasilwire.com/feed/
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Jornal de Brasília
+  type: rss
+  url: https://jornaldebrasilia.com.br/feed/
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: ZEIT ONLINE | Nachrichten, Hintergründe und Debatten
+  type: rss
+  url: http://newsfeed.zeit.de/index
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: FOCUS Online
+  type: rss
+  url: https://rss.focus.de/fol/XML/rss_folnews.xml
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Aktuell - FAZ.NET
+  type: rss
+  url: https://www.faz.net/rss/aktuell/
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: tagesschau.de - Die Nachrichten der ARD
+  type: rss
+  url: http://www.tagesschau.de/xml/rss2
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Deutsche Welle
+  type: rss
+  url: https://rss.dw.com/rdf/rss-en-all
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Republika Online RSS Feed
+  type: rss
+  url: https://www.republika.co.id/rss/
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Tribunnews.com
+  type: rss
+  url: https://www.tribunnews.com/rss
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Merdeka.com
+  type: rss
+  url: https://www.merdeka.com/feed/
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Suara.com
+  type: rss
+  url: https://www.suara.com/rss
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: خبرگزاری باشگاه خبرنگاران | آخرین اخبار ایران و جهان | YJC
+  type: rss
+  url: https://www.yjc.ir/fa/rss/allnews
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: تابناک | TABNAK
+  type: rss
+  url: https://www.tabnak.ir/fa/rss/allnews
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: خبرگزاری ایسنا | صفحه اصلی |  ISNA News Agency
+  type: rss
+  url: https://www.isna.ir/rss
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: خبرگزاری مهر | اخبار ایران و جهان | Mehr News Agency
+  type: rss
+  url: https://www.mehrnews.com/rss
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: خبرگزاری خبرآنلاین - آخرین اخبار ایران و جهان | Khabaronline
+  type: rss
+  url: https://www.khabaronline.ir/rss
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: اخبار ایران و جهان
+  type: rss
+  url: https://www.tasnimnews.com/fa/rss/feed/0/8/0/%D9%85%D9%87%D9%85%D8%AA%D8%B1%DB%8C%D9%86-%D8%A7%D8%AE%D8%A8%D8%A7%D8%B1-%D8%AA%D8%B3%D9%86%DB%8C%D9%85
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: عصر ايران
+  type: rss
+  url: https://www.asriran.com/fa/rss/allnews
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: TheJournal.ie
+  type: rss
+  url: https://www.thejournal.ie/feed/
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: 'All: BreakingNews.ie'
+  type: rss
+  url: https://feeds.breakingnews.ie/bntopstories
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: The42
+  type: rss
+  url: https://www.the42.ie/feed/
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: IrishExaminer.com
+  type: rss
+  url: https://feeds.feedburner.com/ietopstories
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: IrishCentral.com - Top Stories
+  type: rss
+  url: https://feeds.feedburner.com/IrishCentral
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Irish Mirror - Home
+  type: rss
+  url: https://www.irishmirror.ie/?service=rss
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Japan Times latest articles
+  type: rss
+  url: https://www.japantimes.co.jp/feed/topstories/
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Japan Today
+  type: rss
+  url: https://japantoday.com/feed
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: News On Japan
+  type: rss
+  url: http://www.newsonjapan.com/rss/top.xml
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: All - Kyodo News+
+  type: rss
+  url: https://english.kyodonews.net/rss/all.xml
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: BRIDGE（ブリッジ）テクノロジー＆スタートアップ情報
+  type: rss
+  url: http://feeds.feedburner.com/SdJapan
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: NYT > Japan
+  type: rss
+  url: https://www.nytimes.com/svc/collections/v1/publish/http://www.nytimes.com/topic/destination/japan/rss.xml
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: ライブドアニュース - 主要トピックス
+  type: rss
+  url: https://news.livedoor.com/topics/rss/top.xml
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: 朝日新聞デジタル
+  type: rss
+  url: http://rss.asahi.com/rss/asahi/newsheadlines.rdf
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Myanmar Gazette News Media Forum Network
+  type: rss
+  url: http://myanmargazette.net/feed
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: DVB Multimedia Group
+  type: rss
+  url: http://www.dvb.no/feed
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: THIT HTOO LWIN (Daily News)
+  type: rss
+  url: http://www.thithtoolwin.com/feeds/posts/default
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: The Express Tribune
+  type: rss
+  url: https://tribune.com.pk/feed/home
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: The Nation - Top Stories
+  type: rss
+  url: https://nation.com.pk/rss/top-stories
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: قومی خبریں
+  type: rss
+  url: https://jang.com.pk/rss/1/1
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: The News International - Pakistan
+  type: rss
+  url: https://www.thenews.com.pk/rss/1/1
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: News Blog
+  type: rss
+  url: https://newsnblogs.com/feed/
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: UrduPoint.com All Urdu News
+  type: rss
+  url: https://www.urdupoint.com/rss/urdupoint.rss
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: ایکسپریس اردو
+  type: rss
+  url: https://www.express.pk/feed/
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Najnowsze
+  type: rss
+  url: http://feeds.feedburner.com/wPolitycepl
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Newsweek Polska
+  type: rss
+  url: https://www.newsweek.pl/rss.xml
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Dziennik.pl Dziennik - dziennik.pl
+  type: rss
+  url: http://rss.dziennik.pl/Dziennik-PL/
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: www.wirtualnemedia.pl
+  type: rss
+  url: https://www.wirtualnemedia.pl/rss/wirtualnemedia_rss.xml
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: GazetaPrawna.pl - biznes, podatki, prawo, finanse, wiadomości, praca
+  type: rss
+  url: http://rss.gazetaprawna.pl/GazetaPrawna
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: https://www.rp.pl
+  type: rss
+  url: https://www.rp.pl/rss/1019
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Polska Agencja Prasowa SA
+  type: rss
+  url: https://www.pap.pl/rss.xml
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: RMF24.pl
+  type: rss
+  url: https://www.rmf24.pl/feed
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: SowetanLIVE
+  type: rss
+  url: https://www.sowetanlive.co.za/rss/?publication=sowetan-live
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: TechCentral
+  type: rss
+  url: https://techcentral.co.za/feed
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: News24 Top Stories
+  type: rss
+  url: http://feeds.news24.com/articles/news24/TopStories/rss
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Eyewitness News | Latest News
+  type: rss
+  url: https://ewn.co.za/RSS%20Feeds/Latest%20News
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: The Citizen
+  type: rss
+  url: https://citizen.co.za/feed/
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Daily Maverick
+  type: rss
+  url: https://www.dailymaverick.co.za/dmrss/
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Moneyweb
+  type: rss
+  url: https://www.moneyweb.co.za/feed/
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: IOL section feed for News
+  type: rss
+  url: http://rss.iol.io/iol/news
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: TimesLIVE
+  type: rss
+  url: https://www.timeslive.co.za/rss/
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: The South African
+  type: rss
+  url: https://www.thesouthafrican.com/feed/
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Axios
+  type: rss
+  url: https://api.axios.com/feed/
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: The Local
+  type: rss
+  url: https://feeds.thelocal.com/rss/es
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: 'EL PAÍS: el periódico global'
+  type: rss
+  url: https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: España
+  type: rss
+  url: https://rss.elconfidencial.com/espana/
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: ElDiario.es - ElDiario.es
+  type: rss
+  url: https://www.eldiario.es/rss/
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Portada // expansion
+  type: rss
+  url: https://e00-expansion.uecdn.es/rss/portada.xml
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: El Periódico - portada
+  type: rss
+  url: https://www.elperiodico.com/es/rss/rss_portada.xml
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: huffingtonpost.es
+  type: rss
+  url: https://www.huffingtonpost.es/feeds/index.xml
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Euro Weekly News Spain
+  type: rss
+  url: https://www.euroweeklynews.com/feed/
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Agencia EFE | www.efe.com | English edition
+  type: rss
+  url: https://www.efe.com/efe/english/4/rss
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: News Agency UNIAN
+  type: rss
+  url: https://rss.unian.net/site/news_eng.rss
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: ТЕЛЕГРАФ - последние новости Украины и мира
+  type: rss
+  url: https://telegraf.com.ua/yandex-feed/
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Последние новости на сайте korrespondent.net
+  type: rss
+  url: http://k.img.com.ua/rss/ru/all_news2.0.xml
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Цензор.НЕТ - Новости
+  type: rss
+  url: https://censor.net.ua/includes/news_ru.xml
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Новини на tsn.ua
+  type: rss
+  url: https://tsn.ua/rss/full.rss
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Українська правда
+  type: rss
+  url: https://www.pravda.com.ua/rss/
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Гордон - Самые популярные материалы
+  type: rss
+  url: https://gordonua.com/xml/rss_category/top.html
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: НВ
+  type: rss
+  url: https://nv.ua/rss/all.xml
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Информационное агентство УНИАН
+  type: rss
+  url: https://rss.unian.net/site/news_rus.rss
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Еспресо - український погляд на світ!
+  type: rss
+  url: https://espreso.tv/rss
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Gazeta.ua
+  type: rss
+  url: https://gazeta.ua/rss
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Вести.ua
+  type: rss
+  url: https://vesti.ua/feeds/partners
+  category: countries
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: A year of reading the world
+  type: rss
+  url: https://ayearofreadingtheworld.com/feed/
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Aestas Book Blog
+  type: rss
+  url: https://aestasbookblog.com/feed/
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: BOOK RIOT
+  type: rss
+  url: https://bookriot.com/feed/
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Kirkus Reviews
+  type: rss
+  url: https://www.kirkusreviews.com/feeds/rss/
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Page Array – NewInBooks
+  type: rss
+  url: https://www.newinbooks.com/feed/
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: So many books, so little time
+  type: rss
+  url: https://reddit.com/r/books/.rss
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Wokeread
+  type: rss
+  url: https://wokeread.home.blog/feed/
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Fashion - ELLE
+  type: rss
+  url: https://www.elle.com/rss/fashion.xml/
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Fashion | The Guardian
+  type: rss
+  url: https://www.theguardian.com/fashion/rss
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Fashion – Indian Fashion Blog
+  type: rss
+  url: https://www.fashionlady.in/category/fashion/feed
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: FashionBeans Men's Fashion and Style Feed
+  type: rss
+  url: https://www.fashionbeans.com/rss-feed/?category=fashion
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Fashionista
+  type: rss
+  url: https://fashionista.com/.rss/excerpt/
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: NYT > Style
+  type: rss
+  url: https://rss.nytimes.com/services/xml/rss/nyt/FashionandStyle.xml
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: POPSUGAR Fashion
+  type: rss
+  url: https://www.popsugar.com/fashion/feed
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Refinery29
+  type: rss
+  url: https://www.refinery29.com/fashion/rss.xml
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: THE YESSTYLIST – Asian Fashion Blog – brought to you by YesStyle.com
+  type: rss
+  url: https://www.yesstyle.com/blog/category/trend-and-style/feed/
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Who What Wear
+  type: rss
+  url: https://www.whowhatwear.com/rss
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: AwkwardFamilyPhotos.com
+  type: rss
+  url: https://awkwardfamilyphotos.com/feed/
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: 'Cracked: All Posts'
+  type: rss
+  url: http://feeds.feedburner.com/CrackedRSS
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Explosm.net
+  type: rss
+  url: http://feeds.feedburner.com/Explosm
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: FAIL Blog
+  type: rss
+  url: http://feeds.feedburner.com/failblog
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: I Can Has Cheezburger?
+  type: rss
+  url: http://feeds.feedburner.com/icanhascheezburger
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: PHD Comics
+  type: rss
+  url: http://phdcomics.com/gradfeed.php
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Penny Arcade
+  type: rss
+  url: https://www.penny-arcade.com/feed
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: PostSecret
+  type: rss
+  url: https://postsecret.com/feed/?alt=rss
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Saturday Morning Breakfast Cereal
+  type: rss
+  url: https://www.smbc-comics.com/comic/rss
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: The Bloggess
+  type: rss
+  url: https://thebloggess.com/feed/
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: The Daily WTF
+  type: rss
+  url: http://syndication.thedailywtf.com/TheDailyWtf
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: The Oatmeal - Comics by Matthew Inman
+  type: rss
+  url: http://feeds.feedburner.com/oatmealfeed
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: The Onion
+  type: rss
+  url: https://www.theonion.com/rss
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: xkcd.com
+  type: rss
+  url: https://xkcd.com/rss.xml
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: 500px
+  type: rss
+  url: https://iso.500px.com/feed/
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: '500px:'
+  type: rss
+  url: https://500px.com/editors.rss
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Big Picture
+  type: rss
+  url: https://www.bostonglobe.com/rss/bigpicture
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Canon Rumors – Your best source for Canon rumors, leaks and gossip
+  type: rss
+  url: https://www.canonrumors.com/feed/
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Digital Photography School
+  type: rss
+  url: https://feeds.feedburner.com/DigitalPhotographySchool
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Light Stalking
+  type: rss
+  url: https://www.lightstalking.com/feed/
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Lightroom Killer Tips
+  type: rss
+  url: https://lightroomkillertips.com/feed/
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: One Big Photo
+  type: rss
+  url: http://feeds.feedburner.com/OneBigPhoto
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: PetaPixel
+  type: rss
+  url: https://petapixel.com/feed/
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Strobist
+  type: rss
+  url: http://feeds.feedburner.com/blogspot/WOBq
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Stuck in Customs
+  type: rss
+  url: https://stuckincustoms.com/feed/
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: The Sartorialist
+  type: rss
+  url: https://feeds.feedburner.com/TheSartorialist
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: BBC Sport - Sport
+  type: rss
+  url: http://feeds.bbci.co.uk/sport/rss.xml
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Reddit Sports
+  type: rss
+  url: https://www.reddit.com/r/sports.rss
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Sports News - Latest Sports and Football News | Sky News
+  type: rss
+  url: http://feeds.skynews.com/feeds/rss/sports.xml
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Sportskeeda
+  type: rss
+  url: https://www.sportskeeda.com/feed
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Yahoo! Sports - News, Scores, Standings, Rumors, Fantasy Games
+  type: rss
+  url: https://sports.yahoo.com/rss/
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: www.espn.com - TOP
+  type: rss
+  url: https://www.espn.com/espn/rss/news
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: TV
+  type: rss
+  url: https://www.bleedingcool.com/tv/feed/
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: TV Fanatic
+  type: rss
+  url: https://www.tvfanatic.com/rss.xml
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: TVLine
+  type: rss
+  url: https://tvline.com/feed/
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Television News and Discussion
+  type: rss
+  url: https://reddit.com/r/television/.rss
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: The A.V. Club
+  type: rss
+  url: https://tv.avclub.com/rss
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: the TV addict
+  type: rss
+  url: http://feeds.feedburner.com/thetvaddict/AXob
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Atlas Obscura - Latest Articles and Places
+  type: rss
+  url: https://www.atlasobscura.com/feeds/latest
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Live Life Travel
+  type: rss
+  url: https://www.livelifetravel.world/feed/
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Lonely Planet Travel News
+  type: rss
+  url: https://www.lonelyplanet.com/news/feed/atom/
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: NYT > Travel
+  type: rss
+  url: https://rss.nytimes.com/services/xml/rss/nyt/Travel.xml
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Nomadic Matt's Travel Site
+  type: rss
+  url: https://www.nomadicmatt.com/travel-blog/feed/
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Travel | The Guardian
+  type: rss
+  url: https://www.theguardian.com/uk/travel/rss
+  category: recommended
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true

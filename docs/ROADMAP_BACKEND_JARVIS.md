@@ -40,7 +40,9 @@ Construire un backend news personnalise, stable et interfacable, expose via cont
 - [x] Runbook de verification deploiement cree
 - [x] Audit de coherence VM/NAS cree
 - [x] Monitoring API de base (endpoints pipeline/metrics et sources/status)
-- [ ] Alerting centralise (Prometheus/Grafana/Alertmanager)
+- [x] Prometheus stack dediee et regles d'alerte de base ajoutees
+- [x] Dashboard Grafana Helix livre (JSON + script import)
+- [ ] Alertmanager centralise branche
 - [x] Scripts backup/restore PostgreSQL ajoutes
 - [ ] Sauvegardes restaurees teste de bout en bout (DB, MinIO, config)
 
@@ -60,6 +62,8 @@ Construire un backend news personnalise, stable et interfacable, expose via cont
 - [x] Nouvelles sources validees et ajoutees: Hugging Face Blog, GitHub Changelog, ArXiv cs.CL
 - [x] Strategie migration schema en place (Alembic + revision initiale)
 - [x] Endpoint Prometheus /metrics expose
+- [x] Prometheus deployable via docker-compose (port configurable)
+- [x] Dashboard Grafana backend/ingestion pret a importer
 
 ## 5) Definition de done backend Jarvis-ready
 - API contractuelle stable et versionnee.

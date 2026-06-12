@@ -1,0 +1,29 @@
+groups:
+  - name: helix-news-alerts
+    rules:
+      - alert: HelixApiDown
+        expr: up{job="helix_api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Helix API target is down"
+          description: "Prometheus cannot scrape helix_api for more than 2 minutes."
+
+      - alert: HelixSourceErrorsHigh
+        expr: helix_sources_with_errors_total > 10
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High number of failing sources"
+          description: "More than 10 sources currently report errors in pipeline metrics."
+
+      - alert: HelixNoIngestion
+        expr: increase(helix_raw_items_total[30m]) == 0
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "No new raw items ingested"
+          description: "Raw items counter did not increase over the last 30 minutes."

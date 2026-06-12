@@ -26,6 +26,7 @@ ssh vm300 "cd /opt/naas/stacks/news-nas; docker compose ps"
 - Prometheus metrics: http://192.168.1.175:8000/metrics
 - Pipeline metrics: http://192.168.1.175:8000/v1/pipeline/metrics
 - Source status: http://192.168.1.175:8000/v1/pipeline/sources-status
+- Prometheus: http://192.168.1.175:19090
 
 ## 3) Logs utiles
 ssh vm300 "cd /opt/naas/stacks/news-nas; docker compose logs --tail 100 api"
@@ -50,3 +51,9 @@ ssh vm300 "cd /opt/naas/stacks/news-nas; docker compose exec -T api alembic upgr
 ## 7) Backup / restore PostgreSQL
 ssh vm300 "cd /opt/naas/stacks/news-nas; ./scripts/db_backup.sh"
 ssh vm300 "cd /opt/naas/stacks/news-nas; ./scripts/db_restore.sh backups/newsdb_YYYYMMDD_HHMMSS.sql.gz"
+
+## 8) Grafana integration (existing NAS Grafana)
+- Data source URL (Prometheus): http://192.168.1.175:19090
+- Dashboard file: monitoring/grafana/helix-news-overview.json
+- API import helper:
+  GRAFANA_URL=http://<grafana-host>:3000 GRAFANA_TOKEN=<token> ./scripts/import_grafana_dashboard.sh
