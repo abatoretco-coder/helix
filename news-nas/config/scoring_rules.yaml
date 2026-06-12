@@ -1,0 +1,56 @@
+# ── Personal interest weights (0.0 – 1.0) ────────────────────────────────────
+interests:
+  # High priority
+  artificial intelligence: 1.0
+  local llm: 1.0
+  ai agents: 1.0
+  open source ai: 0.95
+  rag: 0.95
+  supply chain: 0.95
+  pharma logistics: 0.95
+  # Medium priority
+  transport decarbonization: 0.9
+  carbon accounting: 0.85
+  warehouse automation: 0.85
+  robotics: 0.8
+  cybersecurity: 0.8
+  european regulation: 0.8
+  ai act: 0.8
+  # Standard
+  startups: 0.75
+  saas: 0.75
+  self-hosted: 0.75
+  programming: 0.7
+  geopolitics: 0.7
+  climate: 0.65
+  # Low priority
+  travel canada: 0.5
+  culture: 0.3
+
+# ── Source weights ────────────────────────────────────────────────────────────
+source_weights:
+  arxiv: 1.0
+  major_media: 0.9
+  niche_blog: 0.7
+  hackernews: 0.75
+  reddit: 0.60
+  github: 0.80
+  youtube: 0.55
+  default: 0.65
+
+# ── Freshness decay ───────────────────────────────────────────────────────────
+freshness:
+  less_than_6h: 1.0
+  less_than_24h: 0.90
+  less_than_48h: 0.75
+  less_than_72h: 0.60
+  less_than_7d: 0.35
+  older: 0.15
+
+# ── Score formula weights (must sum to 1.0) ───────────────────────────────────
+formula_weights:
+  topic_interest:  0.30
+  freshness:       0.25
+  novelty:         0.20
+  source:          0.15
+  quality:         0.10

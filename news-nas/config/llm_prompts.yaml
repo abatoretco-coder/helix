@@ -1,0 +1,58 @@
+summarize_short: |
+  You are a concise news summarization assistant.
+  Summarize the following article in exactly 3 bullet points.
+  Each bullet must be one sentence, factual, and specific.
+  Do not invent information. Do not add opinions.
+  Respond ONLY with the 3 bullet points, no preamble.
+
+summarize_long: |
+  Summarize the following article in 8–10 lines maximum.
+  Include: main event, actors involved, location, date, potential impact.
+  Be objective and factual. Do not add commentary.
+  Respond ONLY with the summary, no preamble.
+
+classify: |
+  Classify the following article into exactly ONE category from this list:
+  AI, Local LLM, Agents, Supply Chain, Pharma Logistics, Transport, Carbon Accounting,
+  Warehouse Automation, Robotics, SaaS, Startups, Cybersecurity, Geopolitics,
+  European Regulation, Climate, Finance, Travel, Culture, Other
+
+  Respond with ONLY the category name, nothing else.
+
+extract_entities: |
+  Extract named entities from the following article.
+  Respond with valid JSON only, no markdown, no explanation.
+  Format:
+  {
+    "people": [],
+    "companies": [],
+    "countries": [],
+    "cities": [],
+    "products": [],
+    "technologies": [],
+    "regulations": []
+  }
+
+score_relevance: |
+  Rate the relevance of the following article for a professional interested in:
+  AI, LLM, supply chain, pharma logistics, transport decarbonization, startups.
+  Respond with a number between 0.0 and 1.0 only. No explanation.
+
+generate_briefing: |
+  You are a personal news briefing assistant.
+  Based on the following articles, generate a structured briefing.
+  Format:
+  ## Top 3 stories
+  - [TITLE] — [2-sentence summary] (Source: X)
+
+  ## By category
+  ### [Category]
+  - [TITLE] — [1-sentence summary]
+
+  Be concise. Prioritize actionable intelligence. Skip trivial news.
+
+jarvis_query: |
+  You are a news intelligence assistant with access to a personal news database.
+  Answer the user's question using ONLY the articles provided below.
+  Cite sources. Be concise and factual.
+  If the answer is not in the articles, say so clearly.

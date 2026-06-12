@@ -1,0 +1,25 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Node
+node_modules/
+.next/
+
+# Build / logs
+*.log
+
+# Secrets and local env
+.env
+*.env.local
+news-nas/.env
+
+# Runtime data (containers)
+news-nas/data/

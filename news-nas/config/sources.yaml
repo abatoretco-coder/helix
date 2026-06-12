@@ -1,0 +1,366 @@
+sources:
+
+  # ── Hacker News ───────────────────────────────────────────────────────────
+  - name: Hacker News
+    type: rss
+    url: https://news.ycombinator.com/rss
+    category: tech
+    language: en
+    country: global
+    priority: 1
+    refresh_minutes: 15
+    extraction_strategy: rss_then_article
+    enabled: true
+
+  # ── Google News — AI / LLM ────────────────────────────────────────────────
+  - name: Google News — Intelligence Artificielle FR
+    type: google_news_rss
+    query: "intelligence artificielle"
+    language: fr
+    country: FR
+    category: ai
+    priority: 1
+    refresh_minutes: 30
+    extraction_strategy: article
+    enabled: true
+
+  - name: Google News — Local LLM EN
+    type: google_news_rss
+    query: "local llm open source"
+    language: en
+    country: global
+    category: ai
+    priority: 1
+    refresh_minutes: 30
+    extraction_strategy: article
+    enabled: true
+
+  - name: Google News — AI Agents EN
+    type: google_news_rss
+    query: "AI agents autonomous"
+    language: en
+    country: global
+    category: ai
+    priority: 1
+    refresh_minutes: 30
+    extraction_strategy: article
+    enabled: true
+
+  - name: Google News — OpenAI Mistral Anthropic
+    type: google_news_rss
+    query: "OpenAI OR Mistral OR Anthropic OR Gemini"
+    language: en
+    country: global
+    category: ai
+    priority: 1
+    refresh_minutes: 30
+    extraction_strategy: article
+    enabled: true
+
+  # ── Google News — Supply Chain / Pharma ───────────────────────────────────
+  - name: Google News — Supply Chain EN
+    type: google_news_rss
+    query: "supply chain logistics"
+    language: en
+    country: global
+    category: supply_chain
+    priority: 1
+    refresh_minutes: 30
+    extraction_strategy: article
+    enabled: true
+
+  - name: Google News — Pharma Logistics FR
+    type: google_news_rss
+    query: "logistique pharmaceutique distribution"
+    language: fr
+    country: FR
+    category: pharma
+    priority: 1
+    refresh_minutes: 60
+    extraction_strategy: article
+    enabled: true
+
+  - name: Google News — Transport Décarbonation
+    type: google_news_rss
+    query: "transport decarbonation carbone logistique"
+    language: fr
+    country: FR
+    category: climate
+    priority: 2
+    refresh_minutes: 60
+    extraction_strategy: article
+    enabled: true
+
+  - name: Google News — Warehouse Automation
+    type: google_news_rss
+    query: "warehouse automation robotics"
+    language: en
+    country: global
+    category: supply_chain
+    priority: 2
+    refresh_minutes: 60
+    extraction_strategy: article
+    enabled: true
+
+  # ── Google News — Tech / Géopolitique ─────────────────────────────────────
+  - name: Google News — Réglementation IA Europe
+    type: google_news_rss
+    query: "AI Act Europe réglementation IA"
+    language: fr
+    country: FR
+    category: regulation
+    priority: 2
+    refresh_minutes: 60
+    extraction_strategy: article
+    enabled: true
+
+  - name: Google News — Géopolitique FR
+    type: google_news_rss
+    query: "géopolitique relations internationales"
+    language: fr
+    country: FR
+    category: geopolitics
+    priority: 2
+    refresh_minutes: 60
+    extraction_strategy: article
+    enabled: true
+
+  - name: Google News — Startups SaaS
+    type: google_news_rss
+    query: "startups SaaS funding"
+    language: en
+    country: global
+    category: startups
+    priority: 2
+    refresh_minutes: 60
+    extraction_strategy: article
+    enabled: true
+
+  - name: Google News — Canada Travel
+    type: google_news_rss
+    query: "Canada travel visa immigration"
+    language: en
+    country: CA
+    category: travel
+    priority: 3
+    refresh_minutes: 120
+    extraction_strategy: article
+    enabled: true
+
+  # ── Reddit ────────────────────────────────────────────────────────────────
+  - name: Reddit — LocalLLaMA
+    type: reddit
+    subreddit: LocalLLaMA
+    category: ai
+    language: en
+    country: global
+    priority: 1
+    refresh_minutes: 30
+    extraction_strategy: reddit
+    enabled: true
+
+  - name: Reddit — MachineLearning
+    type: reddit
+    subreddit: MachineLearning
+    category: ai
+    language: en
+    country: global
+    priority: 2
+    refresh_minutes: 60
+    extraction_strategy: reddit
+    enabled: true
+
+  - name: Reddit — selfhosted
+    type: reddit
+    subreddit: selfhosted
+    category: tech
+    language: en
+    country: global
+    priority: 2
+    refresh_minutes: 60
+    extraction_strategy: reddit
+    enabled: true
+
+  - name: Reddit — supplychain
+    type: reddit
+    subreddit: supplychain
+    category: supply_chain
+    language: en
+    country: global
+    priority: 2
+    refresh_minutes: 60
+    extraction_strategy: reddit
+    enabled: true
+
+  - name: Reddit — france
+    type: reddit
+    subreddit: france
+    category: geopolitics
+    language: fr
+    country: FR
+    priority: 3
+    refresh_minutes: 120
+    extraction_strategy: reddit
+    enabled: true
+
+  - name: Reddit — cybersecurity
+    type: reddit
+    subreddit: cybersecurity
+    category: tech
+    language: en
+    country: global
+    priority: 2
+    refresh_minutes: 60
+    extraction_strategy: reddit
+    enabled: true
+
+  # ── Hacker News API ───────────────────────────────────────────────────────
+  - name: Hacker News — Top Stories
+    type: hackernews
+    hn_type: topstories
+    category: tech
+    language: en
+    country: global
+    priority: 1
+    refresh_minutes: 15
+    extraction_strategy: rss_then_article
+    enabled: true
+
+  - name: Hacker News — Best Stories
+    type: hackernews
+    hn_type: beststories
+    category: tech
+    language: en
+    country: global
+    priority: 2
+    refresh_minutes: 60
+    extraction_strategy: rss_then_article
+    enabled: true
+
+  # ── GitHub ────────────────────────────────────────────────────────────────
+  - name: GitHub Trending — AI Python
+    type: github_trending
+    language_filter: python
+    topic: artificial-intelligence
+    category: ai
+    priority: 2
+    refresh_minutes: 360
+    extraction_strategy: github
+    enabled: true
+
+  - name: GitHub Trending — LLM
+    type: github_trending
+    topic: llm
+    category: ai
+    priority: 2
+    refresh_minutes: 360
+    extraction_strategy: github
+    enabled: true
+
+  - name: GitHub Trending — RAG
+    type: github_trending
+    topic: rag
+    category: ai
+    priority: 2
+    refresh_minutes: 360
+    extraction_strategy: github
+    enabled: true
+
+  - name: GitHub Trending — Self-hosted
+    type: github_trending
+    topic: self-hosted
+    category: tech
+    priority: 3
+    refresh_minutes: 360
+    extraction_strategy: github
+    enabled: true
+
+  # ── RSS Media tech ────────────────────────────────────────────────────────
+  - name: The Verge
+    type: rss
+    url: https://www.theverge.com/rss/index.xml
+    category: tech
+    language: en
+    country: US
+    priority: 1
+    refresh_minutes: 30
+    extraction_strategy: rss_then_article
+    enabled: true
+
+  - name: Wired
+    type: rss
+    url: https://www.wired.com/feed/rss
+    category: tech
+    language: en
+    country: US
+    priority: 2
+    refresh_minutes: 60
+    extraction_strategy: rss_then_article
+    enabled: true
+
+  - name: ArXiv AI (cs.AI)
+    type: rss
+    url: https://rss.arxiv.org/rss/cs.AI
+    category: ai
+    language: en
+    country: global
+    priority: 2
+    refresh_minutes: 360
+    extraction_strategy: rss
+    enabled: true
+
+  - name: ArXiv ML (cs.LG)
+    type: rss
+    url: https://rss.arxiv.org/rss/cs.LG
+    category: ai
+    language: en
+    country: global
+    priority: 2
+    refresh_minutes: 360
+    extraction_strategy: rss
+    enabled: true
+
+  - name: Le Monde Informatique
+    type: rss
+    url: https://www.lemondeinformatique.fr/flux-rss/thematique/toute-l-informatique/rss.xml
+    category: tech
+    language: fr
+    country: FR
+    priority: 2
+    refresh_minutes: 60
+    extraction_strategy: rss_then_article
+    enabled: true
+
+  - name: Journal du Net
+    type: rss
+    url: https://www.journaldunet.com/rss/all
+    category: tech
+    language: fr
+    country: FR
+    priority: 2
+    refresh_minutes: 60
+    extraction_strategy: rss_then_article
+    enabled: true
+
+  # ── YouTube (disabled by default — need channel IDs) ─────────────────────
+  - name: Yannic Kilcher
+    type: youtube_channel
+    channel_id: UCZHmQk67mSJgfCCTn7xBfew
+    category: ai
+    language: en
+    country: global
+    priority: 3
+    refresh_minutes: 360
+    extraction_strategy: youtube
+    enabled: false
+
+  - name: Two Minute Papers
+    type: youtube_channel
+    channel_id: UCbfYPyITQ-7l4upoX8nvctg
+    category: ai
+    language: en
+    country: global
+    priority: 3
+    refresh_minutes: 360
+    extraction_strategy: youtube
+    enabled: false

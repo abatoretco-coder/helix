@@ -1,0 +1,44 @@
+# ── Database ──────────────────────────────────────────────────────────────────
+sqlalchemy==2.0.30
+psycopg2-binary==2.9.9
+asyncpg==0.29.0
+pgvector==0.3.2
+
+# ── Queue ─────────────────────────────────────────────────────────────────────
+redis[hiredis]==5.0.6
+
+# ── HTTP ──────────────────────────────────────────────────────────────────────
+httpx==0.27.0
+requests==2.32.3
+
+# ── Config ────────────────────────────────────────────────────────────────────
+pyyaml==6.0.2
+
+# ── RSS / Feed parsing ─────────────────────────────────────────────────────────
+feedparser==6.0.11
+
+# ── Text extraction — https://github.com/adbar/trafilatura ───────────────────
+trafilatura[all]==1.12.2
+
+# ── Text extraction — https://github.com/codelucas/newspaper (newspaper4k fork)
+newspaper4k==0.9.3.1
+
+# ── Text extraction — https://github.com/fhamborg/news-please ────────────────
+news-please==1.6.13
+
+# ── MinIO ─────────────────────────────────────────────────────────────────────
+minio==7.2.8
+
+# ── Meilisearch ───────────────────────────────────────────────────────────────
+meilisearch==0.31.4
+meilisearch-python-sdk==3.0.1
+
+# ── Logging & utils ───────────────────────────────────────────────────────────
+structlog==24.2.0
+langdetect==1.0.9
+python-dateutil==2.9.0
+lxml==5.2.2
+beautifulsoup4==4.12.3
+
+# ── Playwright — https://playwright.dev/python (JS-rendered pages fallback) ──
+playwright==1.44.0
