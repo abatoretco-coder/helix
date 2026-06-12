@@ -185,3 +185,31 @@ class ProcessingLog(Base):
     payload     = Column(JSONB)
     duration_ms = Column(Integer)
     created_at  = Column(DateTime, server_default=func.now())
+
+
+class UserProfile(Base):
+    __tablename__ = "user_profiles"
+
+    id            = Column(BigInteger, primary_key=True)
+    profile_id    = Column(Text, nullable=False, unique=True)
+    interests     = Column(ARRAY(Text), default=[])
+    muted_sources = Column(ARRAY(Text), default=[])
+    languages     = Column(ARRAY(Text), default=[])
+    metadata      = Column(JSONB)
+    created_at    = Column(DateTime, server_default=func.now())
+    updated_at    = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+class UserFeedback(Base):
+    __tablename__ = "user_feedback"
+
+    id         = Column(BigInteger, primary_key=True)
+    profile_id = Column(Text, nullable=False)
+    article_id = Column(BigInteger, ForeignKey("articles.id", ondelete="CASCADE"), nullable=False)
+    signal     = Column(Text, nullable=False)  # useful | not_useful | saved
+    value      = Column(Integer, default=0)
+    context    = Column(JSONB)
+    created_at = Column(DateTime, server_default=func.now())
+
+
+Index("ix_user_feedback_profile_article", UserFeedback.profile_id, UserFeedback.article_id)

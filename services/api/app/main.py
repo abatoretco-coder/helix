@@ -4,7 +4,7 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.db.session import init_db
-from app.routes import articles, briefings, clusters, health, jarvis, metrics, search, sources
+from app.routes import articles, briefings, clusters, contract, health, jarvis, metrics, search, sources
 from app.security import require_api_token
 
 
@@ -36,6 +36,7 @@ app.include_router(clusters.router, prefix="/clusters", tags=["clusters"])
 app.include_router(briefings.router, prefix="/briefings", tags=["briefings"])
 app.include_router(jarvis.router, prefix="/jarvis", tags=["jarvis"])
 app.include_router(metrics.router, tags=["operations"])
+app.include_router(contract.router, prefix="/contract", tags=["contract"])
 
 # Versioned contract for Jarvis and other clients.
 app.include_router(health.router, prefix="/v1")
@@ -46,3 +47,4 @@ app.include_router(clusters.router, prefix="/v1/clusters", tags=["clusters-v1"],
 app.include_router(briefings.router, prefix="/v1/briefings", tags=["briefings-v1"], dependencies=[Depends(require_api_token)])
 app.include_router(jarvis.router, prefix="/v1/jarvis", tags=["jarvis-v1"], dependencies=[Depends(require_api_token)])
 app.include_router(metrics.router, prefix="/v1", tags=["operations-v1"], dependencies=[Depends(require_api_token)])
+app.include_router(contract.router, prefix="/v1/contract", tags=["contract-v1"], dependencies=[Depends(require_api_token)])

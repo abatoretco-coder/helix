@@ -27,6 +27,7 @@ Construire un backend news personnalise, stable et interfacable, expose via cont
 - [x] Endpoints existants verifies: /health, /articles, /search, /clusters, /briefings/daily, /jarvis/query
 - [x] Versionnage contractuel formel (ex: /v1) implemente
 - [x] Auth machine-to-machine (token interne X-API-Token) implemente
+- [x] Endpoints profils/feedback implementes pour boucle de personnalisation
 
 ### Phase C - Automatisation enrichissement data (partiellement executee)
 - [x] Ingestion multi-source active (RSS, HN, GitHub, GNews, Reddit)
@@ -54,6 +55,7 @@ Construire un backend news personnalise, stable et interfacable, expose via cont
 - [x] Auth token configurable sur endpoints /v1
 - [x] Endpoints operations: /pipeline/metrics et /sources/status
 - [x] Endpoints operations: /pipeline/metrics et /pipeline/sources-status
+- [x] Endpoints contractuels: /contract/profiles/upsert, /contract/feedback
 - [x] Nouvelles sources validees et ajoutees: Hugging Face Blog, GitHub Changelog, ArXiv cs.CL
 
 ## 5) Definition de done backend Jarvis-ready
