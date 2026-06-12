@@ -1,6 +1,8 @@
 """Reddit collector via public RSS (no auth required)."""
 from __future__ import annotations
 
+from urllib.parse import quote
+
 from app.collectors.rss import collect_rss
 from app.utils.logging import get_logger
 
@@ -13,7 +15,7 @@ def collect_reddit(source: dict) -> list[dict]:
         log.warning("reddit_no_subreddit", source=source.get("name"))
         return []
 
-    rss_url = f"https://www.reddit.com/r/{subreddit}/hot/.rss?limit=50"
+    rss_url = f"https://www.reddit.com/r/{quote(subreddit, safe='')}/hot/.rss?limit=50"
     log.info("reddit_fetch", subreddit=subreddit)
     items = collect_rss({**source, "url": rss_url})
 

@@ -42,6 +42,25 @@ _COLLECTOR_MAP = {
 }
 
 
+def _normalize_reddit_subreddit(value: Optional[str]) -> Optional[str]:
+    if not value:
+        return None
+    v = value.strip()
+    if "/r/" in v:
+        v = v.split("/r/", 1)[1]
+    if "/" in v:
+        v = v.split("/", 1)[0]
+    if "—" in v:
+        v = v.split("—")[-1].strip()
+    if "-" in v:
+        # Handles labels like "Reddit - france"
+        tail = v.split("-")[-1].strip()
+        if tail and " " not in tail:
+            v = tail
+    v = v.replace(" ", "")
+    return v or None
+
+
 def _load_sources_yaml() -> list[dict]:
     """Load sources from YAML file (used on first run before DB is seeded)."""
     path = SOURCES_PATH
@@ -66,7 +85,12 @@ def _sync_sources_to_db(session, yaml_sources: list[dict]) -> None:
             name=s["name"],
             source_type=s["type"],
             url=s.get("url"),
-            query=s.get("query"),
+            query=(
+                s.get("query")
+                or (s.get("subreddit") if s.get("type") == "reddit" else None)
+                or (s.get("hn_type") if s.get("type") == "hackernews" else None)
+                or (s.get("topic") if s.get("type") == "github_trending" else None)
+            ),
             country=s.get("country"),
             language=s.get("language", "en"),
             category=s.get("category", "general"),
@@ -132,7 +156,10 @@ def _run_once() -> int:
                     "query": source.query,
                     "language": source.language,
                     "country": source.country,
-                    "subreddit": source.name if source.source_type == "reddit" else None,
+                    "subreddit": (
+                        _normalize_reddit_subreddit(source.query)
+                        or _normalize_reddit_subreddit(source.name)
+                    ) if source.source_type == "reddit" else None,
                     "hn_type": source.query if source.source_type == "hackernews" else "topstories",
                     "topic": source.query if source.source_type == "github_trending" else None,
                     "channel_id": source.url if source.source_type == "youtube_channel" else None,
