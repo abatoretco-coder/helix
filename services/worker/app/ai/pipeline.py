@@ -25,7 +25,7 @@ log = get_logger("ai")
 
 OLLAMA_URL  = os.environ.get("OLLAMA_URL", "http://ollama:11434")
 LLM_MODEL   = os.environ.get("LLM_MODEL", "mistral")
-EMBED_MODEL = os.environ.get("EMBED_MODEL", "nomic-embed-text")
+EMBED_MODEL = os.environ.get("EMBEDDING_MODEL", os.environ.get("EMBED_MODEL", "nomic-embed-text"))
 PROMPTS_PATH  = os.environ.get("PROMPTS_PATH", "/app/config/llm_prompts.yaml")
 SCORING_PATH  = os.environ.get("SCORING_PATH", "/app/config/scoring_rules.yaml")
 

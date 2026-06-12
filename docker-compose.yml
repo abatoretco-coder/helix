@@ -230,6 +230,52 @@ services:
     volumes:
       - ./config:/app/config:ro
 
+  # ── Cluster worker ────────────────────────────────────────────────────────
+
+  worker_cluster:
+    build:
+      context: ./services/worker
+      dockerfile: Dockerfile
+    container_name: news_worker_cluster
+    restart: unless-stopped
+    command: python -m app.workers.cluster
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://news:${POSTGRES_PASSWORD}@postgres:5432/newsdb
+      REDIS_URL: redis://redis:6379/0
+      OLLAMA_URL: http://ollama:11434
+      CLUSTER_SIMILARITY_THRESHOLD: ${CLUSTER_SIMILARITY_THRESHOLD:-0.88}
+      CLUSTER_WINDOW_HOURS: ${CLUSTER_WINDOW_HOURS:-72}
+      APP_ENV: production
+    volumes:
+      - ./config:/app/config:ro
+
+  # ── Briefing worker ───────────────────────────────────────────────────────
+
+  worker_briefing:
+    build:
+      context: ./services/worker
+      dockerfile: Dockerfile
+    container_name: news_worker_briefing
+    restart: unless-stopped
+    command: python -m app.workers.briefing
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://news:${POSTGRES_PASSWORD}@postgres:5432/newsdb
+      REDIS_URL: redis://redis:6379/0
+      OLLAMA_URL: http://ollama:11434
+      APP_ENV: production
+    volumes:
+      - ./config:/app/config:ro
+
   # ── Dashboard ─────────────────────────────────────────────────────────────
 
   dashboard:

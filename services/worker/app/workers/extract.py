@@ -72,6 +72,7 @@ def _process_item(raw_item_id: int) -> None:
         strat = "article"
         if raw_item.source:
             strat = raw_item.source.extraction_strategy or "article"
+        use_playwright = strat in ("playwright", "js", "browser")
 
         mark_raw_item_status(session, raw_item.id, "queued_for_extraction")
 
@@ -80,7 +81,7 @@ def _process_item(raw_item_id: int) -> None:
             url=url,
             raw_payload=raw_item.raw_payload or {},
             extraction_strategy=strat,
-            use_playwright=False,  # Enable per-source if needed
+            use_playwright=use_playwright,
         )
 
         if not extracted or not extracted.text_content:

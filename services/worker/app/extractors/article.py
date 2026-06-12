@@ -22,6 +22,7 @@ from app.utils.logging import get_logger
 log = get_logger("extractor")
 
 MORSS_URL = os.environ.get("MORSS_URL", "http://morss:8080")
+ENABLE_MORSS_FOR_ALL = os.environ.get("ENABLE_MORSS_FOR_ALL", "false").lower() == "true"
 _SESSION = requests.Session()
 _SESSION.headers["User-Agent"] = "NewsNAS/1.0 (+https://github.com)"
 _SESSION.headers["Accept-Language"] = "en,fr;q=0.9"
@@ -297,7 +298,8 @@ def extract_article(
 
     # ── morss pre-fetch (step 2) ─────────────────────────────────────────────
     morss_html = None
-    if extraction_strategy == "morss" or os.environ.get("MORSS_URL"):
+    use_morss = extraction_strategy in ("morss", "rss_then_morss") or ENABLE_MORSS_FOR_ALL
+    if use_morss:
         morss_html = try_morss(url)
 
     # ── trafilatura (step 3) ─────────────────────────────────────────────────

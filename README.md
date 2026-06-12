@@ -142,17 +142,21 @@ sources:
 
 ## 🔄 Workers
 
-**Three async workers** consume Redis queues:
+**Five async workers** consume Redis queues:
 
 1. **collect** — reads sources, calls collectors (RSS, Reddit, GitHub, etc.), inserts raw items
 2. **extract** — fetches URLs, extracts full text via morss → trafilatura → news-please → newspaper4k → playwright
 3. **ai** — summarizes, classifies, extracts entities, generates embeddings, scores articles
+4. **cluster** — consumes `queue:cluster` and groups semantically similar articles
+5. **briefing** — consumes `queue:briefing` and generates daily markdown briefings
 
 Watch logs:
 ```bash
 docker compose logs -f worker_collect
 docker compose logs -f worker_extract
 docker compose logs -f worker_ai
+docker compose logs -f worker_cluster
+docker compose logs -f worker_briefing
 ```
 
 ---
@@ -313,6 +317,8 @@ docker compose ps
 docker compose restart worker_collect
 docker compose restart worker_extract
 docker compose restart worker_ai
+docker compose restart worker_cluster
+docker compose restart worker_briefing
 ```
 
 **Ollama models not downloaded?**
