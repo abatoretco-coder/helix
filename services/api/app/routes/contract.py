@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import UserFeedback, UserProfile
+from app.db.models import Article, UserFeedback, UserProfile
 from app.db.session import get_db
 
 router = APIRouter()
@@ -71,6 +71,12 @@ async def get_profile(profile_id: str, db: AsyncSession = Depends(get_db)):
 
 @router.post("/feedback")
 async def write_feedback(payload: FeedbackPayload, db: AsyncSession = Depends(get_db)):
+    article_exists = (
+        await db.execute(select(Article.id).where(Article.id == payload.article_id))
+    ).scalar_one_or_none()
+    if article_exists is None:
+        raise HTTPException(status_code=404, detail="Article not found")
+
     row = UserFeedback(
         profile_id=payload.profile_id,
         article_id=payload.article_id,
