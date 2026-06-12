@@ -12,6 +12,7 @@ set -euo pipefail
 NAS_IP="${NAS_IP:-192.168.1.50}"
 FRESHRSS_PORT="${FRESHRSS_PORT:-8080}"
 DASHBOARD_PORT="${DASHBOARD_PORT:-3000}"
+PROMETHEUS_PORT="${PROMETHEUS_PORT:-19090}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
@@ -35,7 +36,7 @@ echo "[1/7] .env found ✓"
 # ── 2. Create data directories ────────────────────────────────────────────────
 echo "[2/7] Creating data directories ..."
 mkdir -p data/postgres data/minio data/freshrss data/freshrss-ext \
-         data/meili data/ollama
+         data/meili data/ollama data/prometheus
 
 # ── 3. Build images ───────────────────────────────────────────────────────────
 echo "[3/7] Building Docker images ..."
@@ -90,6 +91,8 @@ echo "║  FreshRSS    → http://${NAS_IP}:${FRESHRSS_PORT}              ║"
 echo "║  Meilisearch → http://${NAS_IP}:7700              ║"
 echo "║  MinIO       → http://${NAS_IP}:9001              ║"
 echo "║  morss       → http://${NAS_IP}:8081              ║"
+echo "║  Prometheus  → http://${NAS_IP}:${PROMETHEUS_PORT}            ║"
+echo "║  API Metrics → http://${NAS_IP}:8000/metrics      ║"
 echo "║                                                      ║"
 echo "║  Logs: docker compose logs -f worker_collect         ║"
 echo "╚══════════════════════════════════════════════════════╝"
