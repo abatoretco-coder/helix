@@ -4,6 +4,7 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.db.session import init_db
+from app.observability import PrometheusMiddleware, router as observability_router
 from app.routes import articles, briefings, clusters, contract, health, jarvis, metrics, search, sources
 from app.security import require_api_token
 
@@ -27,8 +28,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(PrometheusMiddleware)
 
 app.include_router(health.router)
+app.include_router(observability_router)
 app.include_router(sources.router, prefix="/sources", tags=["sources"])
 app.include_router(articles.router, prefix="/articles", tags=["articles"])
 app.include_router(search.router, prefix="/search", tags=["search"])

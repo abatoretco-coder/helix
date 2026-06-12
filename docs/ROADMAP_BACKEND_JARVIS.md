@@ -41,6 +41,7 @@ Construire un backend news personnalise, stable et interfacable, expose via cont
 - [x] Audit de coherence VM/NAS cree
 - [x] Monitoring API de base (endpoints pipeline/metrics et sources/status)
 - [ ] Alerting centralise (Prometheus/Grafana/Alertmanager)
+- [x] Scripts backup/restore PostgreSQL ajoutes
 - [ ] Sauvegardes restaurees teste de bout en bout (DB, MinIO, config)
 
 ## 4) Priorites recommandees (ordre d'execution)
@@ -57,6 +58,8 @@ Construire un backend news personnalise, stable et interfacable, expose via cont
 - [x] Endpoints operations: /pipeline/metrics et /pipeline/sources-status
 - [x] Endpoints contractuels: /contract/profiles/upsert, /contract/feedback
 - [x] Nouvelles sources validees et ajoutees: Hugging Face Blog, GitHub Changelog, ArXiv cs.CL
+- [x] Strategie migration schema en place (Alembic + revision initiale)
+- [x] Endpoint Prometheus /metrics expose
 
 ## 5) Definition de done backend Jarvis-ready
 - API contractuelle stable et versionnee.

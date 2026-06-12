@@ -238,6 +238,37 @@ docker compose restart worker_collect
 - PostgreSQL password should be strong
 - MinIO (S3-like) has separate root key
 
+## 🗃️ Database Migrations (Alembic)
+
+Run schema migrations with the API container environment:
+
+```bash
+./scripts/db_migrate.sh
+```
+
+This executes:
+
+```bash
+docker compose exec -T api alembic upgrade head
+```
+
+## 📈 Observability
+
+- Prometheus-compatible metrics endpoint: `GET /metrics`
+- Operational JSON endpoints:
+  - `GET /v1/pipeline/metrics`
+  - `GET /v1/pipeline/sources-status`
+
+## 💾 Backup / Restore
+
+```bash
+# Backup PostgreSQL
+./scripts/db_backup.sh
+
+# Restore PostgreSQL
+./scripts/db_restore.sh backups/newsdb_YYYYMMDD_HHMMSS.sql.gz
+```
+
 To expose safely over the internet, use a reverse proxy (Nginx, Traefik) with:
 - Rate limiting
 - Authentication (basic auth, OAuth2)

@@ -23,6 +23,9 @@ ssh vm300 "cd /opt/naas/stacks/news-nas; docker compose ps"
 - API health: http://192.168.1.175:8000/health
 - Meilisearch: http://192.168.1.175:7700/health
 - FreshRSS: http://192.168.1.175:8082
+- Prometheus metrics: http://192.168.1.175:8000/metrics
+- Pipeline metrics: http://192.168.1.175:8000/v1/pipeline/metrics
+- Source status: http://192.168.1.175:8000/v1/pipeline/sources-status
 
 ## 3) Logs utiles
 ssh vm300 "cd /opt/naas/stacks/news-nas; docker compose logs --tail 100 api"
@@ -40,3 +43,10 @@ ssh vm300 "cd /opt/naas/stacks/news-nas; docker compose logs --tail 100 worker_a
 - Revenir au commit precedent:
   ssh vm300 "cd /opt/naas/stacks/news-nas; git log --oneline -n 5"
   ssh vm300 "cd /opt/naas/stacks/news-nas; git reset --hard <commit>; docker compose up -d"
+
+## 6) Migrations base de donnees (Alembic)
+ssh vm300 "cd /opt/naas/stacks/news-nas; docker compose exec -T api alembic upgrade head"
+
+## 7) Backup / restore PostgreSQL
+ssh vm300 "cd /opt/naas/stacks/news-nas; ./scripts/db_backup.sh"
+ssh vm300 "cd /opt/naas/stacks/news-nas; ./scripts/db_restore.sh backups/newsdb_YYYYMMDD_HHMMSS.sql.gz"
