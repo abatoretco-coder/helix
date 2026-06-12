@@ -11,6 +11,7 @@ set -euo pipefail
 
 NAS_IP="${NAS_IP:-192.168.1.50}"
 FRESHRSS_PORT="${FRESHRSS_PORT:-8080}"
+DASHBOARD_PORT="${DASHBOARD_PORT:-3000}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
@@ -83,7 +84,7 @@ echo ""
 echo "╔══════════════════════════════════════════════════════╗"
 echo "║  News NAS is running!                                ║"
 echo "║                                                      ║"
-echo "║  Dashboard   → http://${NAS_IP}:3000              ║"
+echo "║  Dashboard   → http://${NAS_IP}:${DASHBOARD_PORT}              ║"
 echo "║  API         → http://${NAS_IP}:8000/docs          ║"
 echo "║  FreshRSS    → http://${NAS_IP}:${FRESHRSS_PORT}              ║"
 echo "║  Meilisearch → http://${NAS_IP}:7700              ║"

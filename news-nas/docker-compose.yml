@@ -244,4 +244,4 @@ services:
       api:
         condition: service_healthy
     ports:
-      - "3000:3000"
+      - "${DASHBOARD_PORT:-3000}:3000"
