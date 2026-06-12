@@ -98,7 +98,7 @@ services:
       CRON_MIN: "*/15"
       TZ: Europe/Paris
     ports:
-      - "8080:80"
+      - "${FRESHRSS_PORT:-8080}:80"
 
   # ── Local LLM ─────────────────────────────────────────────────────────────
 
