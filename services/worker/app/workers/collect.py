@@ -199,11 +199,15 @@ def _run_once() -> int:
                 mark_source_success(session, source.id)
                 log_processing(session, "source", source.id, "collect", "success",
                                 f"{new_count} new items", duration_ms=duration_ms)
+                # Persist progress source-by-source to avoid long-cycle data loss on restart.
+                session.commit()
                 log.info("source_collected", source=source.name, new=new_count, ms=duration_ms)
                 total_new += new_count
 
             except Exception as exc:
+                session.rollback()
                 mark_source_error(session, source.id, str(exc))
+                session.commit()
                 log.error("source_collect_error", source=source.name, error=str(exc))
 
     return total_new
