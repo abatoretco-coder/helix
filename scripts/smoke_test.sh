@@ -16,16 +16,37 @@ if [ "${REQUIRE_API_TOKEN:-false}" = "true" ] && [ -n "${HELIX_API_TOKEN:-}" ]; 
   AUTH_HEADER=(-H "X-API-Token: ${HELIX_API_TOKEN}")
 fi
 
+run_http() {
+  local method="$1"
+  local url="$2"
+
+  if command -v curl >/dev/null 2>&1; then
+    if [ "$method" = "GET" ]; then
+      curl -fsS "${AUTH_HEADER[@]}" "$url" >/dev/null
+    else
+      curl -fsS -X "$method" "${AUTH_HEADER[@]}" "$url" >/dev/null
+    fi
+    return
+  fi
+
+  # Fallback for minimal NAS hosts without curl installed.
+  if [ "$method" = "GET" ]; then
+    docker compose exec -T api curl -fsS "${AUTH_HEADER[@]}" "$url" >/dev/null
+  else
+    docker compose exec -T api curl -fsS -X "$method" "${AUTH_HEADER[@]}" "$url" >/dev/null
+  fi
+}
+
 check_get() {
   local path="$1"
   echo "[smoke] GET ${path}"
-  curl -fsS "${AUTH_HEADER[@]}" "${API_BASE}${path}" >/dev/null
+  run_http "GET" "${API_BASE}${path}"
 }
 
 check_post() {
   local path="$1"
   echo "[smoke] POST ${path}"
-  curl -fsS -X POST "${AUTH_HEADER[@]}" "${API_BASE}${path}" >/dev/null
+  run_http "POST" "${API_BASE}${path}"
 }
 
 echo "[smoke] API base: ${API_BASE}"
