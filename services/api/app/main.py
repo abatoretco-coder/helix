@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.db.session import init_db
 from app.observability import PrometheusMiddleware, router as observability_router
 from app.routes import (
+    alerts,
     articles,
     briefings,
     capabilities,
@@ -20,6 +21,7 @@ from app.routes import (
     queues,
     search,
     sources,
+    user_state,
     watchlist,
 )
 from app.security import require_api_token
@@ -61,6 +63,8 @@ app.include_router(watchlist.router, prefix="/watchlist", tags=["watchlist"])
 app.include_router(projects.router, prefix="/projects", tags=["projects"])
 app.include_router(inbox.router, prefix="/inbox", tags=["inbox"])
 app.include_router(home_assistant.router, prefix="/home-assistant", tags=["home-assistant"])
+app.include_router(alerts.router, prefix="/alerts", tags=["alerts"])
+app.include_router(user_state.router, prefix="/user-state", tags=["user-state"])
 app.include_router(contract.router, prefix="/contract", tags=["contract"])
 
 # Versioned contract for Jarvis and other clients.
@@ -79,4 +83,6 @@ app.include_router(watchlist.router, prefix="/v1/watchlist", tags=["watchlist-v1
 app.include_router(projects.router, prefix="/v1/projects", tags=["projects-v1"], dependencies=[Depends(require_api_token)])
 app.include_router(inbox.router, prefix="/v1/inbox", tags=["inbox-v1"], dependencies=[Depends(require_api_token)])
 app.include_router(home_assistant.router, prefix="/v1/home-assistant", tags=["home-assistant-v1"], dependencies=[Depends(require_api_token)])
+app.include_router(alerts.router, prefix="/v1/alerts", tags=["alerts-v1"], dependencies=[Depends(require_api_token)])
+app.include_router(user_state.router, prefix="/v1/user-state", tags=["user-state-v1"], dependencies=[Depends(require_api_token)])
 app.include_router(contract.router, prefix="/v1/contract", tags=["contract-v1"], dependencies=[Depends(require_api_token)])

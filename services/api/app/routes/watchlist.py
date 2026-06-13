@@ -6,10 +6,10 @@ from typing import Any
 
 import yaml
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import desc, func, select
+from sqlalchemy import and_, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import Article, ArticleAI, Source
+from app.db.models import Article, ArticleAI, EntityMention, Source, WatchlistEntity
 from app.db.session import get_db
 
 router = APIRouter()
@@ -50,10 +50,58 @@ def _entities_blob(entities: Any) -> str:
     return str(entities).lower()
 
 
-@router.get("/")
-async def get_watchlist():
+async def _seed_watchlist_if_empty(db: AsyncSession) -> list[WatchlistEntity]:
+    rows = (
+        await db.execute(
+            select(WatchlistEntity).where(WatchlistEntity.enabled.is_(True)).order_by(desc(WatchlistEntity.priority), WatchlistEntity.name)
+        )
+    ).scalars().all()
+    if rows:
+        return list(rows)
+
     config = _load_watchlist()
     entities = _extract_entities(config)
+    for item in entities:
+        name = str(item.get("name", "")).strip()
+        if not name:
+            continue
+        db.add(
+            WatchlistEntity(
+                name=name,
+                entity_type=str(item.get("type", "unknown")),
+                priority=int(item.get("priority", 2) or 2),
+                enabled=True,
+            )
+        )
+    if entities:
+        await db.commit()
+
+    rows = (
+        await db.execute(
+            select(WatchlistEntity).where(WatchlistEntity.enabled.is_(True)).order_by(desc(WatchlistEntity.priority), WatchlistEntity.name)
+        )
+    ).scalars().all()
+    return list(rows)
+
+
+@router.get("/")
+async def get_watchlist(db: AsyncSession = Depends(get_db)):
+    db_entities = await _seed_watchlist_if_empty(db)
+
+    if db_entities:
+        entities = [
+            {
+                "id": int(item.id),
+                "name": item.name,
+                "type": item.entity_type,
+                "priority": int(item.priority or 2),
+                "enabled": bool(item.enabled),
+            }
+            for item in db_entities
+        ]
+    else:
+        config = _load_watchlist()
+        entities = _extract_entities(config)
     return {
         "count": len(entities),
         "entities": entities,
@@ -62,8 +110,14 @@ async def get_watchlist():
 
 @router.get("/matches")
 async def get_watchlist_matches(limit: int = Query(default=50, ge=1, le=200), db: AsyncSession = Depends(get_db)):
-    config = _load_watchlist()
-    entities = _extract_entities(config)
+    db_entities = await _seed_watchlist_if_empty(db)
+
+    if db_entities:
+        entities = [{"name": item.name, "priority": int(item.priority or 2)} for item in db_entities]
+    else:
+        config = _load_watchlist()
+        entities = _extract_entities(config)
+
     needles = [str(item.get("name", "")).lower() for item in entities if item.get("name")]
 
     if not needles:
@@ -90,6 +144,7 @@ async def get_watchlist_matches(limit: int = Query(default=50, ge=1, le=200), db
     ).all()
 
     matches = []
+    entity_ids_by_name = {str(item.name).lower(): int(item.id) for item in db_entities} if db_entities else {}
     for row in rows:
         title = (row.title or "").lower()
         summary = (row.summary_short or "").lower()
@@ -109,8 +164,34 @@ async def get_watchlist_matches(limit: int = Query(default=50, ge=1, le=200), db
                 "matched_entities": matched,
             }
         )
+        for name in matched:
+            entity_id = entity_ids_by_name.get(name)
+            if entity_id is None:
+                continue
+            existing_link = (
+                await db.execute(
+                    select(EntityMention).where(
+                        and_(
+                            EntityMention.article_id == int(row.id),
+                            EntityMention.watchlist_entity_id == entity_id,
+                        )
+                    )
+                )
+            ).scalar_one_or_none()
+            if existing_link is None:
+                db.add(
+                    EntityMention(
+                        article_id=int(row.id),
+                        watchlist_entity_id=entity_id,
+                        mention_count=1,
+                        matched_context=(row.summary_short or row.title or "")[:400],
+                    )
+                )
         if len(matches) >= limit:
             break
+
+    if matches:
+        await db.commit()
 
     return {
         "count": len(matches),

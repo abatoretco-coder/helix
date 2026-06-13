@@ -213,3 +213,125 @@ class UserFeedback(Base):
 
 
 Index("ix_user_feedback_profile_article", UserFeedback.profile_id, UserFeedback.article_id)
+
+
+class ArticleUserState(Base):
+    __tablename__ = "article_user_state"
+
+    id = Column(BigInteger, primary_key=True)
+    profile_id = Column(Text, nullable=False, default="default")
+    article_id = Column(BigInteger, ForeignKey("articles.id", ondelete="CASCADE"), nullable=False)
+    is_read = Column(Boolean, default=False)
+    is_saved = Column(Boolean, default=False)
+    is_hidden = Column(Boolean, default=False)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+class WatchlistEntity(Base):
+    __tablename__ = "watchlist_entities"
+
+    id = Column(BigInteger, primary_key=True)
+    name = Column(Text, nullable=False)
+    entity_type = Column(Text, default="company")
+    priority = Column(Integer, default=2)
+    enabled = Column(Boolean, default=True)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+class EntityMention(Base):
+    __tablename__ = "entity_mentions"
+
+    id = Column(BigInteger, primary_key=True)
+    article_id = Column(BigInteger, ForeignKey("articles.id", ondelete="CASCADE"), nullable=False)
+    watchlist_entity_id = Column(BigInteger, ForeignKey("watchlist_entities.id", ondelete="CASCADE"), nullable=False)
+    mention_count = Column(Integer, default=1)
+    matched_context = Column(Text)
+    created_at = Column(DateTime, server_default=func.now())
+
+
+class ResearchProject(Base):
+    __tablename__ = "research_projects"
+
+    id = Column(BigInteger, primary_key=True)
+    slug = Column(Text, nullable=False, unique=True)
+    name = Column(Text, nullable=False)
+    description = Column(Text)
+    keywords = Column(ARRAY(Text), default=[])
+    priority = Column(Integer, default=2)
+    enabled = Column(Boolean, default=True)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+class ProjectArticle(Base):
+    __tablename__ = "project_articles"
+
+    id = Column(BigInteger, primary_key=True)
+    project_id = Column(BigInteger, ForeignKey("research_projects.id", ondelete="CASCADE"), nullable=False)
+    article_id = Column(BigInteger, ForeignKey("articles.id", ondelete="CASCADE"), nullable=False)
+    matched_keywords = Column(ARRAY(Text), default=[])
+    created_at = Column(DateTime, server_default=func.now())
+
+
+class NotificationChannel(Base):
+    __tablename__ = "notification_channels"
+
+    id = Column(BigInteger, primary_key=True)
+    name = Column(Text, nullable=False)
+    channel_type = Column(Text, nullable=False)
+    target_url = Column(Text)
+    auth_token = Column(Text)
+    channel_config = Column("config", JSONB)
+    enabled = Column(Boolean, default=True)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+class AlertRule(Base):
+    __tablename__ = "alert_rules"
+
+    id = Column(BigInteger, primary_key=True)
+    name = Column(Text, nullable=False)
+    event_type = Column(Text, nullable=False)
+    rule_config = Column("config", JSONB)
+    channel_id = Column(BigInteger, ForeignKey("notification_channels.id", ondelete="SET NULL"))
+    enabled = Column(Boolean, default=True)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+class ExportJob(Base):
+    __tablename__ = "export_jobs"
+
+    id = Column(BigInteger, primary_key=True)
+    export_type = Column(Text, nullable=False)
+    status = Column(Text, nullable=False, default="queued")
+    output_path = Column(Text)
+    details = Column(JSONB)
+    started_at = Column(DateTime)
+    finished_at = Column(DateTime)
+    created_at = Column(DateTime, server_default=func.now())
+
+
+class RetentionJob(Base):
+    __tablename__ = "retention_jobs"
+
+    id = Column(BigInteger, primary_key=True)
+    job_type = Column(Text, nullable=False)
+    status = Column(Text, nullable=False, default="queued")
+    cutoff_days = Column(Integer)
+    deleted_count = Column(Integer, default=0)
+    details = Column(JSONB)
+    started_at = Column(DateTime)
+    finished_at = Column(DateTime)
+    created_at = Column(DateTime, server_default=func.now())
+
+
+Index("ix_article_user_state_profile_article", ArticleUserState.profile_id, ArticleUserState.article_id, unique=True)
+Index("ix_watchlist_entities_name", WatchlistEntity.name)
+Index("ix_entity_mentions_article", EntityMention.article_id)
+Index("ix_research_projects_slug", ResearchProject.slug, unique=True)
+Index("ix_project_articles_project_article", ProjectArticle.project_id, ProjectArticle.article_id, unique=True)
+Index("ix_alert_rules_event_type", AlertRule.event_type)

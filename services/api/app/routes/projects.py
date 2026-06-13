@@ -6,10 +6,10 @@ from typing import Any
 
 import yaml
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import desc, func, select
+from sqlalchemy import and_, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import Article, ArticleAI, Source
+from app.db.models import Article, ArticleAI, ProjectArticle, ResearchProject, Source
 from app.db.session import get_db
 
 router = APIRouter()
@@ -53,9 +53,58 @@ def _entities_blob(entities: Any) -> str:
     return str(entities).lower()
 
 
+async def _seed_projects_if_empty(db: AsyncSession) -> list[ResearchProject]:
+    rows = (
+        await db.execute(
+            select(ResearchProject).where(ResearchProject.enabled.is_(True)).order_by(desc(ResearchProject.priority), ResearchProject.name)
+        )
+    ).scalars().all()
+    if rows:
+        return list(rows)
+
+    for project in _load_projects():
+        item = _normalize_project(project)
+        if not item.get("slug"):
+            continue
+        db.add(
+            ResearchProject(
+                slug=item["slug"],
+                name=item["name"],
+                description=item.get("description"),
+                keywords=item.get("keywords", []),
+                priority=int(item.get("priority", 2) or 2),
+                enabled=True,
+            )
+        )
+    await db.commit()
+
+    rows = (
+        await db.execute(
+            select(ResearchProject).where(ResearchProject.enabled.is_(True)).order_by(desc(ResearchProject.priority), ResearchProject.name)
+        )
+    ).scalars().all()
+    return list(rows)
+
+
 @router.get("/")
-async def list_projects():
-    items = [_normalize_project(project) for project in _load_projects() if _normalize_project(project).get("slug")]
+async def list_projects(db: AsyncSession = Depends(get_db)):
+    rows = await _seed_projects_if_empty(db)
+
+    if rows:
+        items = [
+            {
+                "id": int(project.id),
+                "slug": project.slug,
+                "name": project.name,
+                "keywords": project.keywords or [],
+                "priority": int(project.priority or 2),
+                "description": project.description,
+            }
+            for project in rows
+        ]
+    else:
+        items = [_normalize_project(project) for project in _load_projects() if _normalize_project(project).get("slug")]
+
     return {
         "count": len(items),
         "items": items,
@@ -64,8 +113,26 @@ async def list_projects():
 
 @router.get("/{slug}/articles")
 async def list_project_articles(slug: str, limit: int = Query(default=50, ge=1, le=200), db: AsyncSession = Depends(get_db)):
-    projects = [_normalize_project(project) for project in _load_projects()]
-    project = next((item for item in projects if item.get("slug") == slug), None)
+    await _seed_projects_if_empty(db)
+    db_project = (
+        await db.execute(
+            select(ResearchProject).where(ResearchProject.slug == slug).where(ResearchProject.enabled.is_(True))
+        )
+    ).scalar_one_or_none()
+
+    if db_project:
+        project = {
+            "id": int(db_project.id),
+            "slug": db_project.slug,
+            "name": db_project.name,
+            "keywords": db_project.keywords or [],
+            "priority": int(db_project.priority or 2),
+            "description": db_project.description,
+        }
+    else:
+        projects = [_normalize_project(project) for project in _load_projects()]
+        project = next((item for item in projects if item.get("slug") == slug), None)
+
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
@@ -95,6 +162,7 @@ async def list_project_articles(slug: str, limit: int = Query(default=50, ge=1, 
     ).all()
 
     items = []
+    project_id = int(project.get("id")) if project.get("id") is not None else None
     for row in rows:
         text_blob = " ".join([
             (row.title or ""),
@@ -119,8 +187,30 @@ async def list_project_articles(slug: str, limit: int = Query(default=50, ge=1, 
                 "matched_keywords": matched_keywords,
             }
         )
+        if project_id is not None:
+            existing_link = (
+                await db.execute(
+                    select(ProjectArticle).where(
+                        and_(
+                            ProjectArticle.project_id == project_id,
+                            ProjectArticle.article_id == int(row.id),
+                        )
+                    )
+                )
+            ).scalar_one_or_none()
+            if existing_link is None:
+                db.add(
+                    ProjectArticle(
+                        project_id=project_id,
+                        article_id=int(row.id),
+                        matched_keywords=matched_keywords,
+                    )
+                )
         if len(items) >= limit:
             break
+
+    if project_id is not None and items:
+        await db.commit()
 
     return {
         "project": project,

@@ -141,6 +141,8 @@ services:
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
       HELIX_API_TOKEN: ${HELIX_API_TOKEN:-}
       REQUIRE_API_TOKEN: ${REQUIRE_API_TOKEN:-false}
+      HOME_ASSISTANT_WEBHOOK_URL: ${HOME_ASSISTANT_WEBHOOK_URL:-}
+      HOME_ASSISTANT_WEBHOOK_TOKEN: ${HOME_ASSISTANT_WEBHOOK_TOKEN:-}
       OLLAMA_URL: http://ollama:11434
       MINIO_ENDPOINT: minio:9000
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
@@ -284,9 +286,31 @@ services:
       DAILY_BRIEFING_MINUTE: ${DAILY_BRIEFING_MINUTE:-30}
       DAILY_BRIEFING_CATEGORY: ${DAILY_BRIEFING_CATEGORY:-all}
       BRIEFING_TICK_SECONDS: ${BRIEFING_TICK_SECONDS:-30}
+      OBSIDIAN_EXPORT_ENABLED: ${OBSIDIAN_EXPORT_ENABLED:-false}
+      OBSIDIAN_EXPORT_PATH: ${OBSIDIAN_EXPORT_PATH:-/app/exports/obsidian}
       APP_ENV: production
     volumes:
       - ./config:/app/config:ro
+      - ./exports:/app/exports
+
+  # ── Cleanup/retention worker ──────────────────────────────────────────────
+
+  worker_cleanup:
+    build:
+      context: ./services/worker
+      dockerfile: Dockerfile
+    container_name: news_worker_cleanup
+    restart: unless-stopped
+    command: python -m app.workers.cleanup
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://news:${POSTGRES_PASSWORD}@postgres:5432/newsdb
+      CLEANUP_INTERVAL_SECONDS: ${CLEANUP_INTERVAL_SECONDS:-3600}
+      PROCESSING_LOG_RETENTION_DAYS: ${PROCESSING_LOG_RETENTION_DAYS:-30}
+      RAW_ITEM_RETENTION_DAYS: ${RAW_ITEM_RETENTION_DAYS:-14}
+      APP_ENV: production
 
   # ── Dashboard ─────────────────────────────────────────────────────────────
 

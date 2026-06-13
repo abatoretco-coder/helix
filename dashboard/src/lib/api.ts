@@ -5,12 +5,16 @@ import {
   Cluster,
   DeadQueueDetail,
   DeadQueueOverview,
+  InboxResponse,
   OpsSummary,
   PipelineErrorsResponse,
   PipelineQueuesResponse,
   PipelineStatus,
+  ProjectItem,
   Source,
   SourceHealthResponse,
+  UserStateUpdate,
+  WatchlistEntity,
 } from "@/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -119,25 +123,38 @@ export const api = {
   getCapabilities: () =>
     fetchAPI<Capabilities>(`/v1/capabilities`),
 
-  getInbox: (params?: { limit?: number; category?: string; min_score?: number; hide_read?: boolean; mode?: string }) => {
+  getInbox: (params?: { limit?: number; category?: string; min_score?: number; hide_read?: boolean; hide_hidden?: boolean; mode?: string; profile_id?: string }) => {
     const q = new URLSearchParams();
     if (params?.limit != null) q.set("limit", String(params.limit));
     if (params?.category) q.set("category", params.category);
     if (params?.min_score != null) q.set("min_score", String(params.min_score));
     if (params?.hide_read != null) q.set("hide_read", String(params.hide_read));
+    if (params?.hide_hidden != null) q.set("hide_hidden", String(params.hide_hidden));
+    if (params?.profile_id) q.set("profile_id", params.profile_id);
     if (params?.mode) q.set("mode", params.mode);
     const suffix = q.toString() ? `?${q.toString()}` : "";
-    return fetchAPI<{ mode: string; count: number; items: any[] }>(`/v1/inbox${suffix}`);
+    return fetchAPI<InboxResponse>(`/v1/inbox${suffix}`);
   },
 
+  setArticleUserState: (articleId: number, payload: UserStateUpdate) =>
+    fetchAPI<any>(`/v1/user-state/articles/${articleId}`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  getSavedArticles: (profileId = "default", limit = 50) =>
+    fetchAPI<{ profile_id: string; count: number; items: any[] }>(
+      `/v1/user-state/saved?profile_id=${encodeURIComponent(profileId)}&limit=${limit}`,
+    ),
+
   getWatchlist: () =>
-    fetchAPI<{ count: number; entities: any[] }>(`/v1/watchlist`),
+    fetchAPI<{ count: number; entities: WatchlistEntity[] }>(`/v1/watchlist`),
 
   getWatchlistMatches: (limit = 50) =>
     fetchAPI<{ count: number; items: any[] }>(`/v1/watchlist/matches?limit=${limit}`),
 
   getProjects: () =>
-    fetchAPI<{ count: number; items: any[] }>(`/v1/projects`),
+    fetchAPI<{ count: number; items: ProjectItem[] }>(`/v1/projects`),
 
   getProjectArticles: (slug: string, limit = 50) =>
     fetchAPI<{ project: any; count: number; items: any[] }>(`/v1/projects/${encodeURIComponent(slug)}/articles?limit=${limit}`),

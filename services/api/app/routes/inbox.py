@@ -5,10 +5,10 @@ from typing import Any
 
 import yaml
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import desc, func, select
+from sqlalchemy import and_, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import Article, ArticleAI, Source
+from app.db.models import Article, ArticleAI, ArticleUserState, Source, WatchlistEntity
 from app.db.session import get_db
 
 router = APIRouter()
@@ -63,6 +63,8 @@ async def inbox(
     category: str | None = None,
     min_score: float | None = None,
     hide_read: bool = False,
+    hide_hidden: bool = True,
+    profile_id: str = Query(default="default"),
     mode: str = Query(default="top", pattern="^(top|recent|long_reads|watchlist)$"),
     db: AsyncSession = Depends(get_db),
 ):
@@ -79,9 +81,19 @@ async def inbox(
             ArticleAI.category,
             ArticleAI.final_score,
             ArticleAI.entities,
+            ArticleUserState.is_read,
+            ArticleUserState.is_saved,
+            ArticleUserState.is_hidden,
             Source.name.label("source_name"),
         )
         .outerjoin(ArticleAI, ArticleAI.article_id == Article.id)
+        .outerjoin(
+            ArticleUserState,
+            and_(
+                ArticleUserState.article_id == Article.id,
+                ArticleUserState.profile_id == profile_id,
+            ),
+        )
         .outerjoin(Source, Source.id == Article.source_id)
     )
 
@@ -89,6 +101,10 @@ async def inbox(
         q = q.where(ArticleAI.category == category)
     if min_score is not None:
         q = q.where(ArticleAI.final_score >= min_score)
+    if hide_read:
+        q = q.where(or_(ArticleUserState.is_read.is_(False), ArticleUserState.is_read.is_(None)))
+    if hide_hidden:
+        q = q.where(or_(ArticleUserState.is_hidden.is_(False), ArticleUserState.is_hidden.is_(None)))
 
     if mode == "top":
         q = q.order_by(desc(ArticleAI.final_score), desc(article_date))
@@ -103,7 +119,11 @@ async def inbox(
 
     needles = []
     if mode == "watchlist":
-        needles = sorted(set(_load_watchlist_needles() + _load_boost_entities()))
+        db_entities = (
+            await db.execute(select(WatchlistEntity).where(WatchlistEntity.enabled.is_(True)))
+        ).scalars().all()
+        db_needles = [str(item.name).lower() for item in db_entities]
+        needles = sorted(set(db_needles + _load_watchlist_needles() + _load_boost_entities()))
     items = []
     for row in rows:
         if mode == "watchlist":
@@ -125,6 +145,9 @@ async def inbox(
                 "category": row.category,
                 "final_score": float(row.final_score or 0),
                 "word_count": row.word_count,
+                "is_read": bool(row.is_read) if row.is_read is not None else False,
+                "is_saved": bool(row.is_saved) if row.is_saved is not None else False,
+                "is_hidden": bool(row.is_hidden) if row.is_hidden is not None else False,
                 "matched_watchlist": matched_watchlist,
             }
         )
@@ -134,7 +157,9 @@ async def inbox(
     return {
         "mode": mode,
         "hide_read": hide_read,
-        "read_state_supported": False,
+        "hide_hidden": hide_hidden,
+        "profile_id": profile_id,
+        "read_state_supported": True,
         "count": len(items),
         "items": items,
     }

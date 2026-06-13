@@ -164,3 +164,53 @@ export interface Capabilities {
   db_watchlist_supported: boolean;
   db_projects_supported: boolean;
 }
+
+export interface InboxItem {
+  id: number;
+  title?: string;
+  url?: string;
+  source?: string;
+  published_at?: string | null;
+  summary_short?: string;
+  category?: string;
+  final_score?: number;
+  word_count?: number;
+  is_read?: boolean;
+  is_saved?: boolean;
+  is_hidden?: boolean;
+  matched_watchlist?: string[];
+}
+
+export interface InboxResponse {
+  mode: string;
+  profile_id: string;
+  hide_read: boolean;
+  hide_hidden: boolean;
+  read_state_supported: boolean;
+  count: number;
+  items: InboxItem[];
+}
+
+export interface UserStateUpdate {
+  profile_id?: string;
+  is_read?: boolean;
+  is_saved?: boolean;
+  is_hidden?: boolean;
+}
+
+export interface WatchlistEntity {
+  id?: number;
+  name: string;
+  type?: string;
+  priority?: number;
+  enabled?: boolean;
+}
+
+export interface ProjectItem {
+  id?: number;
+  slug: string;
+  name: string;
+  keywords: string[];
+  priority?: number;
+  description?: string;
+}

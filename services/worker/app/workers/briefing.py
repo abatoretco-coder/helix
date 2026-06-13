@@ -6,12 +6,13 @@ from __future__ import annotations
 import os
 import time
 from datetime import date, datetime, timezone
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import desc, func, select
 from sqlalchemy.orm import selectinload
 
-from app.db.models import Article, ArticleAI, Briefing
+from app.db.models import Article, ArticleAI, Briefing, ExportJob
 from app.storage.postgres import get_session, log_processing
 from app.storage.redis_queue import dequeue, deserialize_payload, enqueue, enqueue_dead
 from app.utils.logging import get_logger, setup_logging
@@ -34,6 +35,8 @@ BRIEFING_TICK_SECONDS = int(os.environ.get("BRIEFING_TICK_SECONDS", os.environ.g
 BRIEFING_MAX_RETRIES = int(os.environ.get("BRIEFING_MAX_RETRIES", "3"))
 LOW_POWER_MODE = os.environ.get("LOW_POWER_MODE", "false").lower() in {"1", "true", "yes", "on"}
 WORKER_RATE_LIMIT_MS = int(os.environ.get("BRIEFING_WORKER_RATE_LIMIT_MS", os.environ.get("WORKER_RATE_LIMIT_MS", "0")))
+OBSIDIAN_EXPORT_ENABLED = os.environ.get("OBSIDIAN_EXPORT_ENABLED", "false").lower() in {"1", "true", "yes", "on"}
+OBSIDIAN_EXPORT_PATH = os.environ.get("OBSIDIAN_EXPORT_PATH", "/app/exports/obsidian")
 
 # The daily scheduler is intentionally embedded in worker_briefing to avoid one more container.
 
@@ -220,6 +223,30 @@ def _upsert_briefing(session, period: str, period_date: date, category: str, con
     return int(briefing.id)
 
 
+def _export_to_obsidian(session, briefing_id: int, period_date: date, category: str, content: str) -> None:
+    if not OBSIDIAN_EXPORT_ENABLED:
+        return
+
+    started_at = datetime.now(timezone.utc)
+    job = ExportJob(
+        export_type="obsidian_briefing",
+        status="running",
+        details={"briefing_id": briefing_id, "category": category},
+        started_at=started_at,
+    )
+    session.add(job)
+    session.flush()
+
+    output_path = Path(OBSIDIAN_EXPORT_PATH) / "briefings" / str(period_date.year) / f"{period_date.month:02d}"
+    output_path.mkdir(parents=True, exist_ok=True)
+    file_path = output_path / f"{period_date.isoformat()}_{category}.md"
+
+    file_path.write_text(content, encoding="utf-8")
+    job.output_path = str(file_path)
+    job.status = "success"
+    job.finished_at = datetime.now(timezone.utc)
+
+
 def _process_payload(payload: str) -> None:
     period, period_date, category = _parse_payload(payload)
 
@@ -241,6 +268,7 @@ def _process_payload(payload: str) -> None:
             article_ids=chosen_article_ids,
             cluster_ids=chosen_cluster_ids,
         )
+        _export_to_obsidian(session, briefing_id, period_date, category, content)
 
         log_processing(
             session,

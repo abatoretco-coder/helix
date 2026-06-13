@@ -21,8 +21,8 @@ async def get_capabilities():
         "research_projects_config": True,
         "dead_queues": True,
         "obsidian_export": _is_true(os.environ.get("OBSIDIAN_EXPORT_ENABLED", "false")),
-        "home_assistant_skeleton": True,
-        "read_state_supported": False,
-        "db_watchlist_supported": False,
-        "db_projects_supported": False,
+        "home_assistant_skeleton": False,
+        "read_state_supported": True,
+        "db_watchlist_supported": True,
+        "db_projects_supported": True,
     }
