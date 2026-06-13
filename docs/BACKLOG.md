@@ -15,6 +15,7 @@
 ## P1 — Source coverage
 
 - [ ] Add source validation script
+- [x] Add source validation script
 - [ ] Add OPML import/export
 - [ ] Add Google News RSS generator
 - [ ] Add sitemap collector
