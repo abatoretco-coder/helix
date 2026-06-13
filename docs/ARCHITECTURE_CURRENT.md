@@ -15,7 +15,6 @@
 - worker_ai
 - worker_cluster
 - worker_briefing
-- worker_scheduler
 - dashboard
 - prometheus
 
@@ -35,7 +34,7 @@ sources.yaml / DB sources
 → clusters + article_clusters
 → queue:briefing
 → worker_briefing
-→ briefings
+→ briefings (and embedded daily scheduler trigger)
 → API / Dashboard / Jarvis
 
 ## Queues

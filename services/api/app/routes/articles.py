@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.db.models import Article, ArticleAI
+from app.queue import enqueue
 from app.schemas.articles import ArticleRead, ArticleDetail
 
 router = APIRouter()
@@ -58,11 +59,8 @@ async def get_article(article_id: int, db: AsyncSession = Depends(get_db)):
 @router.post("/{article_id}/reprocess", status_code=202)
 async def reprocess_article(article_id: int, db: AsyncSession = Depends(get_db)):
     """Push article back to the AI queue for reprocessing."""
-    import os, redis.asyncio as redis_async
     article = await db.get(Article, article_id)
     if not article:
         raise HTTPException(404, "Article not found")
-    r = redis_async.from_url(os.environ["REDIS_URL"])
-    await r.lpush("queue:ai", str(article_id))
-    await r.aclose()
+    await enqueue("ai", str(article_id))
     return {"queued": article_id}

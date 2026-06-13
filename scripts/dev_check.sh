@@ -16,6 +16,11 @@ python -m compileall services/api/app
 echo "[dev-check] validating source registry"
 python scripts/validate_sources.py --strict
 
+if command -v npm >/dev/null 2>&1; then
+  echo "[dev-check] running dashboard lint when available"
+  npm --prefix dashboard run lint --if-present
+fi
+
 echo "[dev-check] checking running containers"
 running_services="$(docker compose ps --services --filter status=running)"
 if [ -z "$running_services" ] || ! echo "$running_services" | grep -qx "api"; then

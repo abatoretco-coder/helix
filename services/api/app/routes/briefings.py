@@ -1,13 +1,12 @@
-import os
-from datetime import date, datetime, timedelta
+from datetime import date
 from typing import Optional
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
-from sqlalchemy import select, desc, and_
-from sqlalchemy.orm import selectinload
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import and_, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
-from app.db.models import Article, ArticleAI, Briefing
+from app.db.models import Briefing
+from app.queue import enqueue
 from app.schemas.briefings import BriefingRead
 
 router = APIRouter()
@@ -23,7 +22,7 @@ async def get_daily_briefing(
     q = select(Briefing).where(
         and_(
             Briefing.period == "daily",
-            Briefing.period_date == target,
+            func.date(Briefing.period_date) == target,
             Briefing.category == category,
         )
     )
@@ -36,19 +35,14 @@ async def get_daily_briefing(
 
 @router.post("/generate", status_code=202)
 async def generate_briefing(
-    background_tasks: BackgroundTasks,
     period: str = "daily",
     category: str = "all",
     for_date: Optional[date] = None,
-    db: AsyncSession = Depends(get_db),
 ):
     """Trigger async briefing generation via the AI worker."""
-    import redis.asyncio as redis_async
     target = for_date or date.today()
-    r = redis_async.from_url(os.environ["REDIS_URL"])
     payload = f"{period}:{target.isoformat()}:{category}"
-    await r.lpush("queue:briefing", payload)
-    await r.aclose()
+    await enqueue("briefing", payload)
     return {"queued": payload}
 
 

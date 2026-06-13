@@ -13,6 +13,7 @@ export default function SourcesPage() {
   const [filter, setFilter] = useState<"all" | "ok" | "warning" | "broken">("all");
   const [sortBy, setSortBy] = useState<"risk" | "errors" | "recent">("risk");
   const [search, setSearch] = useState("");
+  const [actionBySource, setActionBySource] = useState<Record<number, string>>({});
 
   const loadSources = async (silent = false) => {
     if (silent) {
@@ -36,6 +37,26 @@ export default function SourcesPage() {
   useEffect(() => {
     loadSources();
   }, []);
+
+  const runSourceAction = async (sourceId: number, action: "enable" | "disable" | "refresh" | "reset-errors") => {
+    setActionBySource((prev) => ({ ...prev, [sourceId]: action }));
+    try {
+      if (action === "enable") await api.enableSource(sourceId);
+      if (action === "disable") await api.disableSource(sourceId);
+      if (action === "refresh") await api.refreshSource(sourceId);
+      if (action === "reset-errors") await api.resetSourceErrors(sourceId);
+      await loadSources(true);
+      setError("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Action failed");
+    } finally {
+      setActionBySource((prev) => {
+        const next = { ...prev };
+        delete next[sourceId];
+        return next;
+      });
+    }
+  };
 
   const rankedItems = [...items].sort((a, b) => {
     if (sortBy === "errors") {
@@ -230,6 +251,42 @@ export default function SourcesPage() {
                   Open source
                 </a>
               )}
+
+              <div className="source-actions">
+                {source.enabled ? (
+                  <button
+                    className="action-button"
+                    onClick={() => runSourceAction(source.id, "disable")}
+                    disabled={Boolean(actionBySource[source.id])}
+                  >
+                    {actionBySource[source.id] === "disable" ? "Disabling..." : "Disable"}
+                  </button>
+                ) : (
+                  <button
+                    className="action-button"
+                    onClick={() => runSourceAction(source.id, "enable")}
+                    disabled={Boolean(actionBySource[source.id])}
+                  >
+                    {actionBySource[source.id] === "enable" ? "Enabling..." : "Enable"}
+                  </button>
+                )}
+
+                <button
+                  className="action-button"
+                  onClick={() => runSourceAction(source.id, "refresh")}
+                  disabled={Boolean(actionBySource[source.id])}
+                >
+                  {actionBySource[source.id] === "refresh" ? "Queueing..." : "Refresh soon"}
+                </button>
+
+                <button
+                  className="action-button"
+                  onClick={() => runSourceAction(source.id, "reset-errors")}
+                  disabled={Boolean(actionBySource[source.id])}
+                >
+                  {actionBySource[source.id] === "reset-errors" ? "Resetting..." : "Reset errors"}
+                </button>
+              </div>
             </article>
           ))
         )}
@@ -483,6 +540,8 @@ export default function SourcesPage() {
           color: var(--color-primary);
           font-weight: 600;
           text-decoration: none;
+          display: inline-block;
+          margin-bottom: 0.75rem;
         }
 
         .source-url:hover {
@@ -491,6 +550,18 @@ export default function SourcesPage() {
 
         .no-sources {
           color: var(--color-text-tertiary);
+        }
+
+        .source-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+        }
+
+        .action-button {
+          border-radius: 8px;
+          padding: 0.45rem 0.75rem;
+          font-size: 0.85rem;
         }
 
         @media (max-width: 900px) {

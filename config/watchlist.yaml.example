@@ -1,0 +1,10 @@
+watchlist:
+  entities:
+    - OpenAI
+    - Nvidia
+    - Docker
+  keywords:
+    - local llm
+    - regulation
+    - supply chain
+  priority_boost: 0.1

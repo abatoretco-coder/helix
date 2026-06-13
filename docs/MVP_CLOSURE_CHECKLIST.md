@@ -8,7 +8,7 @@
 - [ ] worker_ai depends on ollama
 - [ ] worker_cluster service is enabled
 - [ ] worker_briefing service is enabled
-- [ ] worker_scheduler service is enabled
+- [ ] daily scheduler is embedded in worker_briefing
 
 ## Pipeline behavior
 
@@ -29,13 +29,15 @@
 - [ ] GET /articles returns 200
 - [ ] GET /search returns 200
 - [ ] GET /clusters returns 200 or 307 -> /clusters/
+- [ ] GET /v1/queues/dead returns 200
+- [ ] GET /v1/ops/summary returns 200
 - [ ] POST /briefings/generate returns 202
 - [ ] GET /briefings/daily is accepted as 200 or 404 on fresh install
 
 ## Ops and docs
 
-- [ ] .env.example includes scheduler variables
-- [ ] README lists six workers
+- [ ] .env.example includes scheduler/retry/obsidian variables
+- [ ] README lists five workers and embedded scheduler note
 - [ ] docs/ROADMAP.md exists
 - [ ] docs/BACKLOG.md exists
 - [ ] docs/ARCHITECTURE_CURRENT.md exists

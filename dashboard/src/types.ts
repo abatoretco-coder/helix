@@ -95,3 +95,34 @@ export interface SourceHealthResponse {
   count: number;
   items: SourceHealthItem[];
 }
+
+export interface PipelineQueuesResponse {
+  generated_at: string;
+  queues: Record<string, number>;
+}
+
+export interface PipelineErrorsResponse {
+  generated_at: string;
+  count: number;
+  by_step: Record<string, number>;
+  items: any[];
+}
+
+export interface DeadQueueOverview {
+  generated_at: string;
+  queues: Record<string, number>;
+}
+
+export interface DeadQueueDetail {
+  queue: string;
+  count: number;
+  items: Record<string, any>[];
+}
+
+export interface OpsSummary {
+  generated_at: string;
+  status: PipelineStatus;
+  queues: PipelineQueuesResponse;
+  dead_letter: DeadQueueOverview;
+  recent_errors: PipelineErrorsResponse;
+}

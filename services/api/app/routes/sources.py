@@ -199,6 +199,51 @@ async def update_source(source_id: int, payload: SourceUpdate, db: AsyncSession 
     return source
 
 
+@router.post("/{source_id}/enable", response_model=SourceRead)
+async def enable_source(source_id: int, db: AsyncSession = Depends(get_db)):
+    source = await db.get(Source, source_id)
+    if not source:
+        raise HTTPException(404, "Source not found")
+    source.enabled = True
+    await db.commit()
+    await db.refresh(source)
+    return source
+
+
+@router.post("/{source_id}/disable", response_model=SourceRead)
+async def disable_source(source_id: int, db: AsyncSession = Depends(get_db)):
+    source = await db.get(Source, source_id)
+    if not source:
+        raise HTTPException(404, "Source not found")
+    source.enabled = False
+    await db.commit()
+    await db.refresh(source)
+    return source
+
+
+@router.post("/{source_id}/refresh", response_model=SourceRead)
+async def refresh_source(source_id: int, db: AsyncSession = Depends(get_db)):
+    source = await db.get(Source, source_id)
+    if not source:
+        raise HTTPException(404, "Source not found")
+    # Move last_checked_at backward so the collector picks the source on next cycle.
+    source.last_checked_at = datetime.utcnow() - timedelta(minutes=max(int(source.refresh_minutes or 60), 1) + 1)
+    await db.commit()
+    await db.refresh(source)
+    return source
+
+
+@router.post("/{source_id}/reset-errors", response_model=SourceRead)
+async def reset_source_errors(source_id: int, db: AsyncSession = Depends(get_db)):
+    source = await db.get(Source, source_id)
+    if not source:
+        raise HTTPException(404, "Source not found")
+    source.error_count = 0
+    await db.commit()
+    await db.refresh(source)
+    return source
+
+
 @router.delete("/{source_id}", status_code=204)
 async def delete_source(source_id: int, db: AsyncSession = Depends(get_db)):
     source = await db.get(Source, source_id)

@@ -148,7 +148,7 @@ sources:
 2. **extract** — fetches URLs, extracts full text via morss → trafilatura → news-please → newspaper4k → playwright
 3. **ai** — summarizes, classifies, extracts entities, generates embeddings, scores articles
 4. **cluster** — consumes `queue:cluster` and groups semantically similar articles
-5. **briefing** — consumes `queue:briefing`, generates daily markdown briefings, and enqueues the daily briefing trigger
+5. **briefing** — consumes `queue:briefing`, generates daily markdown briefings, and runs the embedded daily scheduler trigger (no dedicated scheduler container)
 
 Watch logs:
 ```bash
@@ -200,11 +200,19 @@ Full OpenAPI docs: http://192.168.1.50:8000/docs
 - `GET /v1/briefings/daily`
 - `GET /v1/pipeline/metrics`
 - `GET /v1/pipeline/sources-status`
+- `GET /v1/queues/dead`
+- `GET /v1/ops/summary`
 
 If `REQUIRE_API_TOKEN=true`, provide header:
 
 ```bash
 X-API-Token: <HELIX_API_TOKEN>
+```
+
+Dashboard calls to `/v1` can forward the same token with:
+
+```bash
+NEXT_PUBLIC_API_TOKEN=<HELIX_API_TOKEN>
 ```
 
 ---

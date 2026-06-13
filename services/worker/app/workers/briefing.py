@@ -13,7 +13,7 @@ from sqlalchemy.orm import selectinload
 
 from app.db.models import Article, ArticleAI, Briefing
 from app.storage.postgres import get_session, log_processing
-from app.storage.redis_queue import dequeue, enqueue
+from app.storage.redis_queue import dequeue, deserialize_payload, enqueue, enqueue_dead
 from app.utils.logging import get_logger, setup_logging
 
 log = get_logger("worker.briefing")
@@ -31,6 +31,28 @@ DAILY_BRIEFING_HOUR = int(os.environ.get("DAILY_BRIEFING_HOUR", "7"))
 DAILY_BRIEFING_MINUTE = int(os.environ.get("DAILY_BRIEFING_MINUTE", "30"))
 DAILY_BRIEFING_CATEGORY = os.environ.get("DAILY_BRIEFING_CATEGORY", os.environ.get("SCHEDULER_BRIEFING_CATEGORY", "all"))
 BRIEFING_TICK_SECONDS = int(os.environ.get("BRIEFING_TICK_SECONDS", os.environ.get("SCHEDULER_TICK_SECONDS", "30")))
+BRIEFING_MAX_RETRIES = int(os.environ.get("BRIEFING_MAX_RETRIES", "3"))
+
+# The daily scheduler is intentionally embedded in worker_briefing to avoid one more container.
+
+
+def _decode_retry_payload(raw: str) -> tuple[str, int]:
+    parsed = deserialize_payload(raw)
+    if isinstance(parsed, dict):
+        payload = parsed.get("payload") or parsed.get("original_payload")
+        retry_count = int(parsed.get("retry_count", 0) or 0)
+        if payload is None:
+            payload = raw
+        return str(payload), retry_count
+    return raw, 0
+
+
+def _requeue_or_dead(payload: str, retry_count: int, error: str) -> None:
+    next_retry = retry_count + 1
+    if next_retry <= BRIEFING_MAX_RETRIES:
+        enqueue("briefing", {"payload": payload, "retry_count": next_retry})
+    else:
+        enqueue_dead("briefing", payload, reason=error, retry_count=retry_count)
 
 
 def _local_now() -> datetime:
@@ -153,7 +175,7 @@ def _upsert_briefing(session, period: str, period_date: date, category: str, con
     existing = session.execute(
         select(Briefing).where(
             Briefing.period == period,
-            Briefing.period_date == period_date,
+            func.date(Briefing.period_date) == period_date,
             Briefing.category == category,
         )
     ).scalar_one_or_none()
@@ -265,10 +287,14 @@ def main() -> None:
                 last_daily_briefing_date = _maybe_enqueue_daily_briefing(last_daily_briefing_date)
                 time.sleep(BRIEFING_TICK_SECONDS)
                 continue
-            _process_payload(raw)
+            payload, retry_count = _decode_retry_payload(raw)
+            _process_payload(payload)
         except ValueError as exc:
             log.warning("briefing_invalid_queue_payload", raw=raw, error=str(exc))
         except Exception as exc:
+            if raw:
+                payload, retry_count = _decode_retry_payload(raw)
+                _requeue_or_dead(payload, retry_count, str(exc))
             log.error("briefing_loop_error", error=str(exc), raw=raw)
 
 

@@ -5,10 +5,12 @@
 - Run the daily PostgreSQL backup job.
 - Export configuration files.
 - Export generated briefings and Markdown reports.
+- Export briefings to Obsidian vault when configured.
 - Verify backup archives are readable.
 - Use `scripts/backup_all.sh` for a full NAS-friendly backup.
 - Use `scripts/backup_config.sh` to archive config and docs.
 - Use `scripts/export_briefings.sh` to export briefings as Markdown.
+- `backup_all.sh` stores each run under `backups/<timestamp>/` with a `manifest.txt`.
 
 ## Restore
 
@@ -16,6 +18,8 @@
 - Restore configuration from exported files.
 - Rebuild search indexes if needed.
 - Use `scripts/restore_all.sh <postgres_backup.sql.gz> [config_archive.tar.gz]` for a full restore.
+- Set `RESTORE_CONFIRM=true` before restore to avoid accidental destructive restores.
+- Set `SKIP_DB_RESTORE=true` to restore only config archives.
 
 ## Update
 
@@ -29,6 +33,7 @@
 - Run scripts/smoke_test.sh after deployment.
 - Confirm briefing generation works.
 - Confirm runtime services are up.
+- Confirm `GET /v1/queues/dead` and `GET /v1/ops/summary` return 200.
 
 ## Dev check
 
@@ -60,4 +65,10 @@
 - Check docker compose ps.
 - Inspect worker logs.
 - Verify Redis queues.
+- Inspect dead-letter queues with `/v1/queues/dead` and retry/purge via API when needed.
 - Confirm Postgres and MinIO health.
+
+## Obsidian export
+
+- Configure `OBSIDIAN_VAULT_PATH` and optional `OBSIDIAN_BRIEFINGS_DIR` in `.env`.
+- Run `scripts/export_briefings.sh` to export markdown and push Obsidian notes.

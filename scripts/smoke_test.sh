@@ -81,6 +81,8 @@ check_get "/clusters"
 check_get "/v1/pipeline/status"
 check_get "/v1/pipeline/queues"
 check_get "/v1/pipeline/errors"
+check_get "/v1/queues/dead"
+check_get "/v1/ops/summary"
 check_post "/briefings/generate?period=daily&category=all"
 
 echo "[smoke] GET /briefings/daily (non-fatal when no data yet)"

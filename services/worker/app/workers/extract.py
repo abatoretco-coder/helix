@@ -13,6 +13,7 @@ Extractor chain (from architecture doc):
 """
 from __future__ import annotations
 
+import os
 import time
 from datetime import datetime, timezone
 from typing import Optional
@@ -22,12 +23,43 @@ from sqlalchemy import select, update
 from app.db.models import RawItem, Article
 from app.extractors.article import extract_article
 from app.storage.postgres import get_session, mark_raw_item_status, log_processing
-from app.storage.redis_queue import dequeue, enqueue
+from app.storage.redis_queue import dequeue, deserialize_payload, enqueue, enqueue_dead
 from app.storage.minio import store_raw_html, store_raw_json
 from app.utils.hashing import hash_content
 from app.utils.logging import get_logger, setup_logging
 
 log = get_logger("worker.extract")
+
+EXTRACT_MAX_RETRIES = int(os.environ.get("EXTRACT_MAX_RETRIES", "3"))
+LOW_POWER_MODE = os.environ.get("LOW_POWER_MODE", "false").lower() in {"1", "true", "yes", "on"}
+WORKER_RATE_LIMIT_MS = int(os.environ.get("WORKER_RATE_LIMIT_MS", "0"))
+
+
+def _decode_retry_payload(raw: str) -> tuple[str, int]:
+    parsed = deserialize_payload(raw)
+    if isinstance(parsed, dict):
+        payload = parsed.get("payload") or parsed.get("original_payload")
+        retry_count = int(parsed.get("retry_count", 0) or 0)
+        if payload is None:
+            payload = raw
+        return str(payload), retry_count
+    return raw, 0
+
+
+def _requeue_or_dead(payload: str, retry_count: int, error: str) -> None:
+    next_retry = retry_count + 1
+    if next_retry <= EXTRACT_MAX_RETRIES:
+        enqueue("extract", {"payload": payload, "retry_count": next_retry})
+    else:
+        enqueue_dead("extract", payload, reason=error, retry_count=retry_count)
+
+
+def _loop_pause() -> None:
+    delay_ms = WORKER_RATE_LIMIT_MS
+    if LOW_POWER_MODE and delay_ms == 0:
+        delay_ms = 150
+    if delay_ms > 0:
+        time.sleep(delay_ms / 1000.0)
 
 
 def _compute_quality_score(article) -> float:
@@ -179,16 +211,23 @@ def main():
     log.info("extract_worker_start")
 
     while True:
+        raw = None
         try:
             raw = dequeue("extract", timeout=5)
             if raw is None:
                 continue
-            raw_item_id = int(raw.strip())
+            payload, retry_count = _decode_retry_payload(raw)
+            raw_item_id = int(payload.strip())
             _process_item(raw_item_id)
         except ValueError:
             log.warning("invalid_queue_payload", raw=raw)
         except Exception as exc:
+            if raw:
+                payload, retry_count = _decode_retry_payload(raw)
+                _requeue_or_dead(payload, retry_count, str(exc))
             log.error("extract_loop_error", error=str(exc))
+        finally:
+            _loop_pause()
 
 
 if __name__ == "__main__":

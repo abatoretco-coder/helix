@@ -1,0 +1,22 @@
+projects:
+  - name: Local AI stack
+    description: Track practical updates around local LLM deployment on NAS and homelab.
+    topics:
+      - ai
+      - open source
+      - infrastructure
+    watch_entities:
+      - Ollama
+      - llama.cpp
+      - Mistral
+
+  - name: Supply chain resilience
+    description: Monitor logistics, regulation, and carbon-aware transport trends.
+    topics:
+      - supply chain
+      - regulation
+      - transport
+    watch_entities:
+      - CEVA
+      - Kuehne+Nagel
+      - Maersk

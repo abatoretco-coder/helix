@@ -23,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/clusters">Clusters</Link>
               <Link href="/briefings">Briefings</Link>
               <Link href="/sources">Sources</Link>
+              <Link href="/operations">Operations</Link>
               <Link href="/search">Search</Link>
               <Link href="/jarvis">Jarvis</Link>
             </nav>

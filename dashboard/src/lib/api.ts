@@ -1,14 +1,32 @@
-import { Article, Briefing, Cluster, PipelineStatus, Source, SourceHealthResponse } from "@/types";
+import {
+  Article,
+  Briefing,
+  Cluster,
+  DeadQueueDetail,
+  DeadQueueOverview,
+  OpsSummary,
+  PipelineErrorsResponse,
+  PipelineQueuesResponse,
+  PipelineStatus,
+  Source,
+  SourceHealthResponse,
+} from "@/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_TOKEN = process.env.NEXT_PUBLIC_API_TOKEN;
 
 async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...((options?.headers as Record<string, string>) || {}),
+  };
+  if (API_TOKEN) {
+    headers["X-API-Token"] = API_TOKEN;
+  }
+
   const res = await fetch(`${API_URL}${endpoint}`, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options?.headers,
-    },
+    headers,
   });
 
   if (!res.ok) {
@@ -59,15 +77,42 @@ export const api = {
   getSourceHealth: () =>
     fetchAPI<SourceHealthResponse>(`/v1/sources/health`),
 
+  enableSource: (id: number) =>
+    fetchAPI<Source>(`/v1/sources/${id}/enable`, { method: "POST" }),
+
+  disableSource: (id: number) =>
+    fetchAPI<Source>(`/v1/sources/${id}/disable`, { method: "POST" }),
+
+  refreshSource: (id: number) =>
+    fetchAPI<Source>(`/v1/sources/${id}/refresh`, { method: "POST" }),
+
+  resetSourceErrors: (id: number) =>
+    fetchAPI<Source>(`/v1/sources/${id}/reset-errors`, { method: "POST" }),
+
   // Pipeline
   getPipelineStatus: () =>
     fetchAPI<PipelineStatus>(`/v1/pipeline/status`),
 
   getPipelineQueues: () =>
-    fetchAPI<{ generated_at: string; queues: Record<string, number> }>(`/v1/pipeline/queues`),
+    fetchAPI<PipelineQueuesResponse>(`/v1/pipeline/queues`),
 
   getPipelineErrors: () =>
-    fetchAPI<{ generated_at: string; count: number; by_step: Record<string, number>; items: any[] }>(`/v1/pipeline/errors`),
+    fetchAPI<PipelineErrorsResponse>(`/v1/pipeline/errors`),
+
+  getDeadQueues: () =>
+    fetchAPI<DeadQueueOverview>(`/v1/queues/dead`),
+
+  getDeadQueue: (queue: string, limit = 100) =>
+    fetchAPI<DeadQueueDetail>(`/v1/queues/dead/${queue}?limit=${limit}`),
+
+  retryDeadQueue: (queue: string, limit = 100) =>
+    fetchAPI<{ queue: string; retried: number }>(`/v1/queues/dead/${queue}/retry?limit=${limit}`, { method: "POST" }),
+
+  purgeDeadQueue: (queue: string) =>
+    fetchAPI<{ queue: string; purged: number }>(`/v1/queues/dead/${queue}`, { method: "DELETE" }),
+
+  getOpsSummary: () =>
+    fetchAPI<OpsSummary>(`/v1/ops/summary`),
 
   // Health
   health: () =>

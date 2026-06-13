@@ -36,3 +36,6 @@ print(f"[export_briefings] Exported {count} briefing files")
 PY
 
 echo "[export_briefings] Export complete: $OUT_DIR"
+
+echo "[export_briefings] Exporting to Obsidian vault if configured"
+python3 "$PROJECT_DIR/scripts/export_briefings_obsidian.py"

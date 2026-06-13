@@ -1,15 +1,18 @@
 from collections import Counter
+import json
 import os
 from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 import redis.asyncio as redis_async
 
 from app.db.models import Article, ArticleAI, ArticleCluster, Briefing, Cluster, ProcessingLog, RawItem, Source
 from app.db.session import get_db
+from app.queue import dead_queue_items, dead_queue_size, purge_dead_queue, retry_dead_queue
+from app.security import require_api_token
 
 router = APIRouter()
 
@@ -85,6 +88,16 @@ async def _queue_depths() -> dict[str, int]:
         return {queue_name: int(await _redis_client.llen(f"queue:{queue_name}")) for queue_name in PIPELINE_QUEUES}
     except Exception:
         return {queue_name: 0 for queue_name in PIPELINE_QUEUES}
+
+
+def _parse_dead_item(raw: str) -> dict[str, Any]:
+    try:
+        payload = json.loads(raw)
+        if isinstance(payload, dict):
+            return payload
+    except Exception:
+        pass
+    return {"original_payload": raw}
 
 
 @router.get("/pipeline/metrics")
@@ -197,6 +210,49 @@ async def pipeline_queues():
     }
 
 
+@router.get("/queues/dead")
+async def dead_queues_overview():
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "queues": {queue_name: await dead_queue_size(queue_name) for queue_name in PIPELINE_QUEUES},
+    }
+
+
+@router.get("/queues/dead/{queue_name}")
+async def dead_queue_detail(queue_name: str, limit: int = Query(default=50, ge=1, le=500)):
+    if queue_name not in PIPELINE_QUEUES:
+        raise HTTPException(status_code=404, detail="Unknown queue")
+    items = await dead_queue_items(queue_name, limit=limit)
+    parsed = [_parse_dead_item(raw) for raw in items]
+    return {
+        "queue": queue_name,
+        "count": len(parsed),
+        "items": parsed,
+    }
+
+
+@router.post("/queues/dead/{queue_name}/retry", dependencies=[Depends(require_api_token)])
+async def dead_queue_retry(queue_name: str, limit: int = Query(default=100, ge=1, le=1000)):
+    if queue_name not in PIPELINE_QUEUES:
+        raise HTTPException(status_code=404, detail="Unknown queue")
+    retried = await retry_dead_queue(queue_name, limit=limit)
+    return {
+        "queue": queue_name,
+        "retried": retried,
+    }
+
+
+@router.delete("/queues/dead/{queue_name}", dependencies=[Depends(require_api_token)])
+async def dead_queue_purge(queue_name: str):
+    if queue_name not in PIPELINE_QUEUES:
+        raise HTTPException(status_code=404, detail="Unknown queue")
+    purged = await purge_dead_queue(queue_name)
+    return {
+        "queue": queue_name,
+        "purged": purged,
+    }
+
+
 @router.get("/pipeline/errors")
 async def pipeline_errors(db: AsyncSession = Depends(get_db), limit: int = Query(default=25, ge=1, le=100)):
     rows = await _recent_error_rows(db, limit=limit)
@@ -261,4 +317,19 @@ async def sources_status(
             }
             for row in rows
         ],
+    }
+
+
+@router.get("/ops/summary")
+async def ops_summary(db: AsyncSession = Depends(get_db)):
+    status = await pipeline_status(db)
+    queues = await pipeline_queues()
+    dead = await dead_queues_overview()
+    errors = await pipeline_errors(db, limit=10)
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "status": status,
+        "queues": queues,
+        "dead_letter": dead,
+        "recent_errors": errors,
     }

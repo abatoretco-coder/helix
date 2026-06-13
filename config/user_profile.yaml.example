@@ -26,3 +26,11 @@ profile:
     - KPMG
     - CEVA
     - Kuehne+Nagel
+  anti_dopamine:
+    weight: 0.2
+    patterns:
+      - you won't believe
+      - shocking
+      - outrage
+      - celebrity
+      - scandal

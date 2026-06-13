@@ -152,6 +152,9 @@ def compute_scores(
     user_profile = _user_profile.get("profile", {}) if isinstance(_user_profile, dict) else {}
     profile_interests = user_profile.get("interests", {}) if isinstance(user_profile, dict) else {}
     negative_keywords = user_profile.get("negative_keywords", {}) if isinstance(user_profile, dict) else {}
+    anti_dopamine = user_profile.get("anti_dopamine", {}) if isinstance(user_profile, dict) else {}
+    anti_patterns = [str(x).lower() for x in (anti_dopamine.get("patterns", []) if isinstance(anti_dopamine, dict) else [])]
+    anti_weight = float(anti_dopamine.get("weight", 0.2)) if isinstance(anti_dopamine, dict) else 0.2
     boost_entities = [str(item).lower() for item in (user_profile.get("boost_entities", []) or [])]
     article_text = f"{getattr(article, 'title', '') or ''} {getattr(article, 'description', '') or ''} {getattr(article, 'text_content', '') or ''}".lower()
 
@@ -192,7 +195,23 @@ def compute_scores(
         if keyword_norm and keyword_norm in article_text:
             negative_penalty += abs(float(penalty)) * 0.1
 
-    personal_relevance_score = min(max(0.5 * topic_score + 0.5 * profile_topic_score + entity_bonus - negative_penalty, 0.0), 1.0)
+    anti_dopamine_score = 0.0
+    for pattern in anti_patterns:
+        if pattern and pattern in article_text:
+            anti_dopamine_score += 0.2
+    anti_dopamine_score = min(anti_dopamine_score, 1.0)
+
+    personal_relevance_score = min(
+        max(
+            0.5 * topic_score
+            + 0.5 * profile_topic_score
+            + entity_bonus
+            - negative_penalty
+            - (anti_dopamine_score * anti_weight),
+            0.0,
+        ),
+        1.0,
+    )
 
     # Freshness score
     freshness_score = 0.5
