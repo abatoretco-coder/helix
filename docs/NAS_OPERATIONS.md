@@ -43,6 +43,12 @@
 - Run scripts/dev_check.sh before pushing changes.
 - Use it as the local release gate.
 
+## Dashboard Token Security
+
+- `NEXT_PUBLIC_HELIX_API_TOKEN` is acceptable only for LAN-only NAS usage.
+- Do not expose a public dashboard that embeds this token in browser-visible configuration.
+- For future external exposure, use server-side auth and/or reverse proxy authentication.
+
 ## Logs workers
 
 - worker_collect

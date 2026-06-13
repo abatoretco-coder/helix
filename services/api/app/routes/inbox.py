@@ -134,6 +134,7 @@ async def inbox(
     return {
         "mode": mode,
         "hide_read": hide_read,
+        "read_state_supported": False,
         "count": len(items),
         "items": items,
     }

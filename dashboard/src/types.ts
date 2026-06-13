@@ -151,3 +151,16 @@ export interface OpsSummary {
     exists: boolean;
   };
 }
+
+export interface Capabilities {
+  generated_at: string;
+  inbox: boolean;
+  watchlist_config: boolean;
+  research_projects_config: boolean;
+  dead_queues: boolean;
+  obsidian_export: boolean;
+  home_assistant_skeleton: boolean;
+  read_state_supported: boolean;
+  db_watchlist_supported: boolean;
+  db_projects_supported: boolean;
+}

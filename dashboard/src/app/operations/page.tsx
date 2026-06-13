@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
-import { DeadQueueDetail, DeadQueueOverview, OpsSummary } from "@/types";
+import { Capabilities, DeadQueueDetail, DeadQueueOverview, OpsSummary } from "@/types";
 import { ErrorMessage, LoadingSpinner } from "@/components/ArticleCard";
 
 const PIPELINE_QUEUES = ["extract", "ai", "cluster", "briefing"] as const;
@@ -28,6 +28,7 @@ const EXPECTED_SERVICES = [
 
 export default function OperationsPage() {
   const [summary, setSummary] = useState<OpsSummary | null>(null);
+  const [capabilities, setCapabilities] = useState<Capabilities | null>(null);
   const [deadOverview, setDeadOverview] = useState<DeadQueueOverview | null>(null);
   const [deadDetails, setDeadDetails] = useState<Record<string, DeadQueueDetail>>({});
   const [loading, setLoading] = useState(true);
@@ -39,9 +40,10 @@ export default function OperationsPage() {
     if (silent) setRefreshing(true);
     else setLoading(true);
     try {
-      const [ops, dead] = await Promise.all([api.getOpsSummary(), api.getDeadQueues()]);
+      const [ops, dead, caps] = await Promise.all([api.getOpsSummary(), api.getDeadQueues(), api.getCapabilities()]);
       setSummary(ops);
       setDeadOverview(dead);
+      setCapabilities(caps);
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load operations data");
@@ -191,6 +193,14 @@ export default function OperationsPage() {
           <p>Backup path: {summary?.backup.path || "n/a"}</p>
           <p>Backup exists: {summary?.backup.exists ? "yes" : "no"}</p>
           <p>Obsidian export: {summary?.obsidian_export.enabled ? "enabled" : "disabled"}</p>
+        </article>
+        <article className="metric-card">
+          <h3>Capabilities</h3>
+          <p>Inbox: {capabilities?.inbox ? "enabled" : "disabled"}</p>
+          <p>Watchlist config: {capabilities?.watchlist_config ? "enabled" : "disabled"}</p>
+          <p>Projects config: {capabilities?.research_projects_config ? "enabled" : "disabled"}</p>
+          <p>Dead queues: {capabilities?.dead_queues ? "enabled" : "disabled"}</p>
+          <p>Read state DB: {capabilities?.read_state_supported ? "enabled" : "not supported"}</p>
         </article>
       </section>
 

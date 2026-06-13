@@ -1,6 +1,7 @@
 import {
   Article,
   Briefing,
+  Capabilities,
   Cluster,
   DeadQueueDetail,
   DeadQueueOverview,
@@ -114,6 +115,9 @@ export const api = {
 
   getOpsSummary: () =>
     fetchAPI<OpsSummary>(`/v1/ops/summary`),
+
+  getCapabilities: () =>
+    fetchAPI<Capabilities>(`/v1/capabilities`),
 
   getInbox: (params?: { limit?: number; category?: string; min_score?: number; hide_read?: boolean; mode?: string }) => {
     const q = new URLSearchParams();

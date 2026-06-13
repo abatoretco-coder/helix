@@ -8,6 +8,7 @@ from app.observability import PrometheusMiddleware, router as observability_rout
 from app.routes import (
     articles,
     briefings,
+    capabilities,
     clusters,
     contract,
     health,
@@ -55,6 +56,7 @@ app.include_router(briefings.router, prefix="/briefings", tags=["briefings"])
 app.include_router(jarvis.router, prefix="/jarvis", tags=["jarvis"])
 app.include_router(metrics.router, tags=["operations"])
 app.include_router(queues.router, prefix="/queues", tags=["queues"])
+app.include_router(capabilities.router, prefix="/capabilities", tags=["capabilities"])
 app.include_router(watchlist.router, prefix="/watchlist", tags=["watchlist"])
 app.include_router(projects.router, prefix="/projects", tags=["projects"])
 app.include_router(inbox.router, prefix="/inbox", tags=["inbox"])
@@ -71,6 +73,8 @@ app.include_router(briefings.router, prefix="/v1/briefings", tags=["briefings-v1
 app.include_router(jarvis.router, prefix="/v1/jarvis", tags=["jarvis-v1"], dependencies=[Depends(require_api_token)])
 app.include_router(metrics.router, prefix="/v1", tags=["operations-v1"], dependencies=[Depends(require_api_token)])
 app.include_router(queues.router, prefix="/v1/queues", tags=["queues-v1"], dependencies=[Depends(require_api_token)])
+app.include_router(queues.admin_router, prefix="/v1/queues", tags=["queues-v1-admin"], dependencies=[Depends(require_api_token)])
+app.include_router(capabilities.router, prefix="/v1/capabilities", tags=["capabilities-v1"], dependencies=[Depends(require_api_token)])
 app.include_router(watchlist.router, prefix="/v1/watchlist", tags=["watchlist-v1"], dependencies=[Depends(require_api_token)])
 app.include_router(projects.router, prefix="/v1/projects", tags=["projects-v1"], dependencies=[Depends(require_api_token)])
 app.include_router(inbox.router, prefix="/v1/inbox", tags=["inbox-v1"], dependencies=[Depends(require_api_token)])
