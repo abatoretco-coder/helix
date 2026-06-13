@@ -1,0 +1,28 @@
+profile:
+  language: fr
+  briefing_style: executive
+  interests:
+    ai_local: 1.0
+    open_source_agents: 0.95
+    supply_chain: 0.9
+    pharma_distribution: 0.85
+    carbon_transport: 0.85
+    startups_saas: 0.8
+    homelab_nas: 0.8
+    geopolitics_regulation: 0.7
+  negative_keywords:
+    celebrity_gossip: -0.8
+    drama: -0.7
+    outrage: -0.6
+    low_quality_clickbait: -0.6
+  boost_entities:
+    - OpenAI
+    - Mistral
+    - Ollama
+    - Nvidia
+    - Docker
+    - Proxmox
+    - Servier
+    - KPMG
+    - CEVA
+    - Kuehne+Nagel

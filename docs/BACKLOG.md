@@ -9,6 +9,8 @@
 - [ ] Fix cluster embedding check
 - [ ] Add MVP closure checklist
 - [ ] Run full local smoke test
+- [ ] Add source health endpoint
+- [ ] Add pipeline status endpoint
 
 ## P1 — Source coverage
 
@@ -18,6 +20,12 @@
 - [ ] Add sitemap collector
 - [ ] Add YouTube collector improvements
 - [ ] Add GitHub releases collector
+- [ ] Add dead-letter queues
+- [ ] Add user_profile scoring
+- [ ] Add source health dashboard
+- [ ] Add Obsidian export
+- [ ] Add backup_all.sh
+- [ ] Add cleanup worker
 
 ## P2 — AI quality
 
@@ -26,6 +34,12 @@
 - [ ] Add semantic search endpoint
 - [ ] Add similar articles endpoint
 - [ ] Add entity normalization
+- [ ] Add watchlist entities
+- [ ] Add anti-dopamine scoring
+- [ ] Add Home Assistant webhook
+- [ ] Add cluster timeline
+- [ ] Add research projects
+- [ ] Add Jarvis cited answers
 
 ## P3 — Dashboard
 

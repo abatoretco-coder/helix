@@ -1,4 +1,4 @@
-import { Article, Cluster, Briefing, Source } from "@/types";
+import { Article, Briefing, Cluster, PipelineStatus, Source, SourceHealthResponse } from "@/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -55,6 +55,19 @@ export const api = {
   // Sources
   getSources: () =>
     fetchAPI<Source[]>(`/sources`),
+
+  getSourceHealth: () =>
+    fetchAPI<SourceHealthResponse>(`/v1/sources/health`),
+
+  // Pipeline
+  getPipelineStatus: () =>
+    fetchAPI<PipelineStatus>(`/v1/pipeline/status`),
+
+  getPipelineQueues: () =>
+    fetchAPI<{ generated_at: string; queues: Record<string, number> }>(`/v1/pipeline/queues`),
+
+  getPipelineErrors: () =>
+    fetchAPI<{ generated_at: string; count: number; by_step: Record<string, number>; items: any[] }>(`/v1/pipeline/errors`),
 
   // Health
   health: () =>

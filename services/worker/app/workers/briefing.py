@@ -44,11 +44,19 @@ def _parse_payload(payload: str) -> tuple[str, date, str]:
 
 
 def _select_articles(session, period_date: date, category: str) -> list[Article]:
+    article_date = func.date(
+        func.coalesce(
+            Article.published_at,
+            Article.discovered_at,
+            Article.extracted_at,
+        )
+    )
+
     q = (
         select(Article)
         .join(ArticleAI, ArticleAI.article_id == Article.id)
         .options(selectinload(Article.ai), selectinload(Article.source), selectinload(Article.clusters))
-        .where(func.date(Article.published_at) == period_date)
+        .where(article_date == period_date)
         .order_by(desc(ArticleAI.final_score), desc(Article.published_at))
         .limit(TOP_ARTICLES_LIMIT)
     )

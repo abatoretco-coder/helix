@@ -28,19 +28,26 @@ LLM_MODEL   = os.environ.get("LLM_MODEL", "mistral")
 EMBED_MODEL = os.environ.get("EMBEDDING_MODEL", os.environ.get("EMBED_MODEL", "nomic-embed-text"))
 PROMPTS_PATH  = os.environ.get("PROMPTS_PATH", "/app/config/llm_prompts.yaml")
 SCORING_PATH  = os.environ.get("SCORING_PATH", "/app/config/scoring_rules.yaml")
+USER_PROFILE_PATH = os.environ.get("USER_PROFILE_PATH", "/app/config/user_profile.yaml")
 
 _prompts: dict = {}
 _scoring: dict = {}
+_user_profile: dict = {}
 
 
 def _load_config():
-    global _prompts, _scoring
+    global _prompts, _scoring, _user_profile
     if not _prompts and os.path.exists(PROMPTS_PATH):
         with open(PROMPTS_PATH, encoding="utf-8") as f:
             _prompts = yaml.safe_load(f) or {}
     if not _scoring and os.path.exists(SCORING_PATH):
         with open(SCORING_PATH, encoding="utf-8") as f:
             _scoring = yaml.safe_load(f) or {}
+    if not _user_profile:
+        profile_path = USER_PROFILE_PATH if os.path.exists(USER_PROFILE_PATH) else f"{USER_PROFILE_PATH}.example"
+        if os.path.exists(profile_path):
+            with open(profile_path, encoding="utf-8") as f:
+                _user_profile = yaml.safe_load(f) or {}
 
 
 def _ollama_generate(prompt: str, model: str = LLM_MODEL) -> str:
@@ -129,6 +136,7 @@ def compute_scores(
     quality_score: float,
     published_at: Optional[datetime],
     source_name: str,
+    entities: Optional[dict] = None,
 ) -> dict[str, float]:
     _load_config()
     interests     = _scoring.get("interests", {})
@@ -141,6 +149,11 @@ def compute_scores(
         "source": 0.15,
         "quality": 0.10,
     })
+    user_profile = _user_profile.get("profile", {}) if isinstance(_user_profile, dict) else {}
+    profile_interests = user_profile.get("interests", {}) if isinstance(user_profile, dict) else {}
+    negative_keywords = user_profile.get("negative_keywords", {}) if isinstance(user_profile, dict) else {}
+    boost_entities = [str(item).lower() for item in (user_profile.get("boost_entities", []) or [])]
+    article_text = f"{getattr(article, 'title', '') or ''} {getattr(article, 'description', '') or ''} {getattr(article, 'text_content', '') or ''}".lower()
 
     # Topic interest score
     cat_lower = (category or "").lower()
@@ -148,6 +161,38 @@ def compute_scores(
         (v for k, v in interests.items() if k.lower() in cat_lower or cat_lower in k.lower()),
         default=0.3,
     )
+
+    # User profile relevance: weighted topic + entity boosts.
+    profile_topic_score = max(
+        (float(v) for k, v in profile_interests.items() if k.lower().replace("_", " ") in cat_lower or cat_lower in k.lower().replace("_", " ")),
+        default=0.3,
+    )
+
+    entity_bonus = 0.0
+    if boost_entities:
+        entities_blob = " ".join(
+            str(value)
+            for value in (
+                (entities or {}).get("people", []),
+                (entities or {}).get("companies", []),
+                (entities or {}).get("countries", []),
+                (entities or {}).get("cities", []),
+                (entities or {}).get("products", []),
+                (entities or {}).get("technologies", []),
+                (entities or {}).get("regulations", []),
+            )
+        ).lower()
+        for entity in boost_entities:
+            if entity and (entity in entities_blob or entity in article_text):
+                entity_bonus += 0.05
+
+    negative_penalty = 0.0
+    for keyword, penalty in negative_keywords.items():
+        keyword_norm = str(keyword).lower().replace("_", " ")
+        if keyword_norm and keyword_norm in article_text:
+            negative_penalty += abs(float(penalty)) * 0.1
+
+    personal_relevance_score = min(max(0.5 * topic_score + 0.5 * profile_topic_score + entity_bonus - negative_penalty, 0.0), 1.0)
 
     # Freshness score
     freshness_score = 0.5
@@ -190,7 +235,7 @@ def compute_scores(
 
     # Weighted final score
     final = (
-        topic_score   * weights.get("topic_interest", 0.30)
+        personal_relevance_score * weights.get("topic_interest", 0.30)
         + freshness_score * weights.get("freshness", 0.25)
         + novelty_score   * weights.get("novelty", 0.20)
         + src_score       * weights.get("source", 0.15)
@@ -202,7 +247,7 @@ def compute_scores(
         "freshness_score":           round(freshness_score, 3),
         "source_score":              round(src_score, 3),
         "novelty_score":             round(novelty_score, 3),
-        "personal_relevance_score":  round(topic_score, 3),
+        "personal_relevance_score":  round(personal_relevance_score, 3),
         "quality_score":             round(quality_norm, 3),
         "final_score":               round(min(final, 1.0), 3),
     }

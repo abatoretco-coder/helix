@@ -53,3 +53,45 @@ export interface Briefing {
   content?: string;
   generated_at: string;
 }
+
+export interface PipelineStatus {
+  generated_at: string;
+  sources: {
+    total: number;
+    enabled: number;
+    active: number;
+    with_errors: number;
+  };
+  pipeline: {
+    raw_items_total: number;
+    raw_items_today: number;
+    articles_total: number;
+    articles_today: number;
+    ai_processed_total: number;
+    ai_processed_today: number;
+    briefings_total: number;
+    briefings_today: number;
+    processing_errors_last_24h: number;
+    queue_depths: Record<string, number>;
+    average_durations_last_24h_ms: Record<string, number>;
+    cluster_count: number;
+    cluster_links: number;
+  };
+}
+
+export interface SourceHealthItem extends Source {
+  last_checked_at?: string | null;
+  last_success_at?: string | null;
+  last_error_at?: string | null;
+  errors_24h: number;
+  items_24h: number;
+  articles_24h: number;
+  extraction_success_rate_24h?: number | null;
+  quality_avg?: number | null;
+  status: "ok" | "warning" | "broken";
+}
+
+export interface SourceHealthResponse {
+  count: number;
+  items: SourceHealthItem[];
+}

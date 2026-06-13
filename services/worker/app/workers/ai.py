@@ -71,6 +71,7 @@ def _process_article(article_id: int) -> None:
             quality_score=float(article.quality_score or 0),
             published_at=article.published_at,
             source_name=source_name,
+            entities=entities,
         )
 
         # 6. Save article_ai (upsert)

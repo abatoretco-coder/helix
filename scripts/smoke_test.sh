@@ -74,9 +74,13 @@ echo "[smoke] API base: ${API_BASE}"
 check_get "/health"
 check_get "/v1/health"
 check_get "/sources"
+check_get "/sources/health"
 check_get "/articles?limit=1"
 check_get "/search?q=test"
 check_get "/clusters"
+check_get "/v1/pipeline/status"
+check_get "/v1/pipeline/queues"
+check_get "/v1/pipeline/errors"
 check_post "/briefings/generate?period=daily&category=all"
 
 echo "[smoke] GET /briefings/daily (non-fatal when no data yet)"
@@ -95,14 +99,19 @@ required_services=(
   postgres
   redis
   minio
+  morss
   meilisearch
+  ollama
   api
+  freshrss
   worker_collect
   worker_extract
   worker_ai
   worker_cluster
   worker_briefing
   worker_scheduler
+  dashboard
+  prometheus
 )
 
 running_services="$(docker compose ps --services --filter status=running)"
