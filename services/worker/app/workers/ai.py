@@ -8,7 +8,6 @@ import os
 import time
 from datetime import datetime, timezone
 
-from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from app.db.models import Article, ArticleAI
@@ -27,7 +26,7 @@ log = get_logger("worker.ai")
 LLM_MODEL = os.environ.get("LLM_MODEL", "mistral")
 AI_MAX_RETRIES = int(os.environ.get("AI_MAX_RETRIES", "3"))
 LOW_POWER_MODE = os.environ.get("LOW_POWER_MODE", "false").lower() in {"1", "true", "yes", "on"}
-WORKER_RATE_LIMIT_MS = int(os.environ.get("WORKER_RATE_LIMIT_MS", "0"))
+WORKER_RATE_LIMIT_MS = int(os.environ.get("AI_WORKER_RATE_LIMIT_MS", os.environ.get("WORKER_RATE_LIMIT_MS", "0")))
 
 
 def _decode_retry_payload(raw: str) -> tuple[str, int]:
@@ -84,11 +83,20 @@ def _process_article(article_id: int) -> None:
         short_summary = summarize_short(title, text)
         long_summary  = summarize_long(title, text)
 
+        if not short_summary:
+            short_summary = (article.description or title or "No summary available")[:800]
+        if not long_summary:
+            long_summary = short_summary
+
         # 2. Classify
         category = classify_article(title, text)
+        if not category:
+            category = "general"
 
         # 3. Extract entities
         entities = extract_entities(title, text)
+        if not isinstance(entities, dict):
+            entities = {}
 
         # 4. Embedding on title + short summary (compact, fast)
         embed_text = f"{title}\n{short_summary}"
@@ -118,8 +126,9 @@ def _process_article(article_id: int) -> None:
             **scores,
         }
         if embedding:
-            from pgvector.sqlalchemy import Vector
             ai_data["embedding"] = embedding
+        else:
+            log.warning("ai_partial_success", article_id=article_id, reason="missing_embedding")
 
         stmt = pg_insert(ArticleAI).values(**ai_data).on_conflict_do_update(
             index_elements=["article_id"],

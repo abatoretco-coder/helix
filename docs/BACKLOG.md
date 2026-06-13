@@ -21,7 +21,7 @@
 - [ ] Add YouTube collector improvements
 - [ ] Add GitHub releases collector
 - [x] Add dead-letter queues
-- [ ] Add user_profile scoring
+- [x] Add user_profile scoring
 - [x] Add source health dashboard
 - [x] Add Obsidian export
 - [x] Add backup_all.sh
@@ -34,12 +34,12 @@
 - [ ] Add semantic search endpoint
 - [ ] Add similar articles endpoint
 - [ ] Add entity normalization
-- [ ] Add watchlist entities
-- [ ] Add anti-dopamine scoring
-- [ ] Add Home Assistant webhook
-- [ ] Add cluster timeline
-- [ ] Add research projects
-- [ ] Add Jarvis cited answers
+- [x] Add watchlist entities
+- [x] Add anti-dopamine scoring
+- [x] Add Home Assistant webhook skeleton
+- [x] Add cluster timeline
+- [x] Add research projects config + read endpoints
+- [x] Add Jarvis contract v2 with legacy payload compatibility
 
 ## P3 — Dashboard
 
@@ -52,7 +52,7 @@
 
 ## P4 — Jarvis
 
-- [ ] Stabilize /v1/jarvis/query
+- [x] Stabilize /v1/jarvis/query
 - [ ] Add cited answers
 - [ ] Add voice briefing format
 - [ ] Add topic-specific queries

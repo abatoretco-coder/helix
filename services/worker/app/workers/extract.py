@@ -32,7 +32,7 @@ log = get_logger("worker.extract")
 
 EXTRACT_MAX_RETRIES = int(os.environ.get("EXTRACT_MAX_RETRIES", "3"))
 LOW_POWER_MODE = os.environ.get("LOW_POWER_MODE", "false").lower() in {"1", "true", "yes", "on"}
-WORKER_RATE_LIMIT_MS = int(os.environ.get("WORKER_RATE_LIMIT_MS", "0"))
+WORKER_RATE_LIMIT_MS = int(os.environ.get("EXTRACT_WORKER_RATE_LIMIT_MS", os.environ.get("WORKER_RATE_LIMIT_MS", "0")))
 
 
 def _decode_retry_payload(raw: str) -> tuple[str, int]:
@@ -117,10 +117,32 @@ def _process_item(raw_item_id: int) -> None:
         )
 
         if not extracted or not extracted.text_content:
-            mark_raw_item_status(session, raw_item.id, "failed", "no content extracted")
-            log_processing(session, "raw_item", raw_item.id, "extract", "error",
-                           "no content extracted")
-            log.warning("extract_empty", url=url)
+            raw_item.retry_count = int(raw_item.retry_count or 0) + 1
+            current_retry = int(raw_item.retry_count)
+            if current_retry <= EXTRACT_MAX_RETRIES:
+                mark_raw_item_status(session, raw_item.id, "retry_pending", "no content extracted")
+                enqueue("extract", {"payload": str(raw_item.id), "retry_count": current_retry})
+                log_processing(
+                    session,
+                    "raw_item",
+                    raw_item.id,
+                    "extract",
+                    "retry",
+                    f"no content extracted; retry={current_retry}/{EXTRACT_MAX_RETRIES}",
+                )
+                log.warning("extract_empty_retry", url=url, retry=current_retry)
+            else:
+                mark_raw_item_status(session, raw_item.id, "failed", "no content extracted")
+                enqueue_dead("extract", str(raw_item.id), reason="no content extracted", retry_count=current_retry)
+                log_processing(
+                    session,
+                    "raw_item",
+                    raw_item.id,
+                    "extract",
+                    "error",
+                    f"no content extracted; sent to dead-letter after {current_retry} retries",
+                )
+                log.warning("extract_empty_dead_letter", url=url, retry=current_retry)
             return
 
         # ── Deduplication by content hash ────────────────────────────────────

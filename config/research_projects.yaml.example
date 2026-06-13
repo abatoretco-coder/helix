@@ -1,22 +1,15 @@
 projects:
-  - name: Local AI stack
-    description: Track practical updates around local LLM deployment on NAS and homelab.
-    topics:
-      - ai
-      - open source
-      - infrastructure
-    watch_entities:
-      - Ollama
-      - llama.cpp
-      - Mistral
+  - slug: ai_agents
+    name: AI Agents
+    keywords: ["agent", "OpenAI", "Claude", "Mistral", "Ollama"]
+    priority: 1
 
-  - name: Supply chain resilience
-    description: Monitor logistics, regulation, and carbon-aware transport trends.
-    topics:
-      - supply chain
-      - regulation
-      - transport
-    watch_entities:
-      - CEVA
-      - Kuehne+Nagel
-      - Maersk
+  - slug: nas_homelab
+    name: NAS Homelab
+    keywords: ["Proxmox", "Docker", "NAS", "self-hosted"]
+    priority: 1
+
+  - slug: supply_chain_pharma
+    name: Supply Chain Pharma
+    keywords: ["GDP", "pharma distribution", "warehouse", "3PL", "serialization"]
+    priority: 1

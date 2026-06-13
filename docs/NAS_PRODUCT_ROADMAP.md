@@ -2,35 +2,34 @@
 
 ## Phase 1 — NAS cockpit
 
-- Pipeline health page
-- Source health page
-- Queue monitoring
-- Worker monitoring
-- Error dashboard
-- Manual retry actions
+- [x] Pipeline health page
+- [x] Source health page
+- [x] Queue monitoring
+- [x] Error dashboard
+- [x] Manual dead-letter retry/purge actions
 
 ## Phase 2 — Storage and retention
 
 - MinIO structured raw archive
 - Retention policy
 - Cleanup worker
-- Backup all script
-- Restore all script
-- Export briefings to Markdown
+- [x] Backup all script
+- [x] Restore all script
+- [x] Export briefings to Markdown and Obsidian layout
 
 ## Phase 3 — Personal intelligence
 
-- User profile config
-- Personal relevance scoring
-- Anti-dopamine score
-- Watchlist entities
+- [x] User profile config
+- [x] Personal relevance scoring
+- [x] Anti-dopamine score (without destructive migration)
+- [x] Watchlist entities + matches endpoint
 - Trend detection
 - Similar articles
 - Cluster timeline
 
 ## Phase 4 — Jarvis integration
 
-- Stable /v1/jarvis/query
+- [x] Stable /v1/jarvis/query (v2 contract with backward compatibility)
 - Source-cited answers
 - Voice briefing mode
 - Topic-specific briefings
@@ -38,17 +37,17 @@
 
 ## Phase 5 — NAS ecosystem
 
-- Home Assistant webhook
-- Obsidian Markdown export
+- [x] Home Assistant webhook skeleton
+- [x] Obsidian Markdown export
 - Paperless-ngx export
 - Plex cultural recommendations
 - Notification channels
 
 ## Phase 6 — Reliability
 
-- Dead-letter queues
-- Retry policies
-- Worker rate limits
-- Low power mode
-- Backup verification
+- [x] Dead-letter queues
+- [x] Retry policies
+- [x] Worker rate limits (global + per worker)
+- [x] Low power mode
+- [x] Backup verification
 - Grafana dashboard

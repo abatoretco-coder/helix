@@ -40,7 +40,7 @@ async def dead_queue_size(queue_name: str) -> int:
 async def dead_queue_items(queue_name: str, limit: int = 100) -> list[str]:
     client = _client()
     try:
-        return [str(item) for item in await client.lrange(f"queue:{queue_name}:dead", 0, max(limit - 1, 0))]
+        return [str(item) for item in await client.lrange(f"queue:{queue_name}:dead", -max(limit, 1), -1)]
     finally:
         await client.aclose()
 

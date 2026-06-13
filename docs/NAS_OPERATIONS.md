@@ -11,6 +11,7 @@
 - Use `scripts/backup_config.sh` to archive config and docs.
 - Use `scripts/export_briefings.sh` to export briefings as Markdown.
 - `backup_all.sh` stores each run under `backups/<timestamp>/` with a `manifest.txt`.
+- Use `scripts/backup_verify.sh <backups/<timestamp>>` to validate backup completeness.
 
 ## Restore
 
@@ -20,6 +21,8 @@
 - Use `scripts/restore_all.sh <postgres_backup.sql.gz> [config_archive.tar.gz]` for a full restore.
 - Set `RESTORE_CONFIRM=true` before restore to avoid accidental destructive restores.
 - Set `SKIP_DB_RESTORE=true` to restore only config archives.
+- Example:
+	- `RESTORE_CONFIRM=true scripts/restore_all.sh backups/newsdb_YYYYMMDD_HHMMSS.sql.gz backups/config_YYYYMMDD_HHMMSS.tar.gz`
 
 ## Update
 
@@ -70,5 +73,6 @@
 
 ## Obsidian export
 
-- Configure `OBSIDIAN_VAULT_PATH` and optional `OBSIDIAN_BRIEFINGS_DIR` in `.env`.
-- Run `scripts/export_briefings.sh` to export markdown and push Obsidian notes.
+- Configure `OBSIDIAN_EXPORT_ENABLED=true` in `.env` to enable export.
+- Optional path override: `OBSIDIAN_EXPORT_PATH=exports/obsidian`.
+- Run `scripts/export_briefings.sh` to export markdown plus Obsidian-friendly files.

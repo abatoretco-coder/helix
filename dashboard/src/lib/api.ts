@@ -13,16 +13,14 @@ import {
 } from "@/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-const API_TOKEN = process.env.NEXT_PUBLIC_API_TOKEN;
+const API_TOKEN = process.env.NEXT_PUBLIC_HELIX_API_TOKEN;
 
 async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    ...(API_TOKEN ? { "X-API-Token": API_TOKEN } : {}),
     ...((options?.headers as Record<string, string>) || {}),
   };
-  if (API_TOKEN) {
-    headers["X-API-Token"] = API_TOKEN;
-  }
 
   const res = await fetch(`${API_URL}${endpoint}`, {
     ...options,
@@ -55,6 +53,9 @@ export const api = {
 
   getCluster: (id: number) =>
     fetchAPI<any>(`/clusters/${id}`),
+
+  getClusterTimeline: (id: number) =>
+    fetchAPI<{ cluster_id: number; count: number; items: any[] }>(`/v1/clusters/${id}/timeline`),
 
   // Briefings
   getDailyBriefing: () =>
@@ -102,17 +103,40 @@ export const api = {
   getDeadQueues: () =>
     fetchAPI<DeadQueueOverview>(`/v1/queues/dead`),
 
-  getDeadQueue: (queue: string, limit = 100) =>
+  getDeadQueueItems: (queue: string, limit = 100) =>
     fetchAPI<DeadQueueDetail>(`/v1/queues/dead/${queue}?limit=${limit}`),
 
   retryDeadQueue: (queue: string, limit = 100) =>
     fetchAPI<{ queue: string; retried: number }>(`/v1/queues/dead/${queue}/retry?limit=${limit}`, { method: "POST" }),
 
   purgeDeadQueue: (queue: string) =>
-    fetchAPI<{ queue: string; purged: number }>(`/v1/queues/dead/${queue}`, { method: "DELETE" }),
+    fetchAPI<{ queue: string; purged: number }>(`/v1/queues/dead/${queue}/purge`, { method: "POST" }),
 
   getOpsSummary: () =>
     fetchAPI<OpsSummary>(`/v1/ops/summary`),
+
+  getInbox: (params?: { limit?: number; category?: string; min_score?: number; hide_read?: boolean; mode?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.limit != null) q.set("limit", String(params.limit));
+    if (params?.category) q.set("category", params.category);
+    if (params?.min_score != null) q.set("min_score", String(params.min_score));
+    if (params?.hide_read != null) q.set("hide_read", String(params.hide_read));
+    if (params?.mode) q.set("mode", params.mode);
+    const suffix = q.toString() ? `?${q.toString()}` : "";
+    return fetchAPI<{ mode: string; count: number; items: any[] }>(`/v1/inbox${suffix}`);
+  },
+
+  getWatchlist: () =>
+    fetchAPI<{ count: number; entities: any[] }>(`/v1/watchlist`),
+
+  getWatchlistMatches: (limit = 50) =>
+    fetchAPI<{ count: number; items: any[] }>(`/v1/watchlist/matches?limit=${limit}`),
+
+  getProjects: () =>
+    fetchAPI<{ count: number; items: any[] }>(`/v1/projects`),
+
+  getProjectArticles: (slug: string, limit = 50) =>
+    fetchAPI<{ project: any; count: number; items: any[] }>(`/v1/projects/${encodeURIComponent(slug)}/articles?limit=${limit}`),
 
   // Health
   health: () =>

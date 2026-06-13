@@ -27,10 +27,16 @@ profile:
     - CEVA
     - Kuehne+Nagel
   anti_dopamine:
-    weight: 0.2
-    patterns:
+    enabled: true
+    clickbait_keywords:
       - you won't believe
       - shocking
-      - outrage
-      - celebrity
+      - unbelievable
       - scandal
+      - drama
+      - outrage
+      - secret
+      - insane
+    min_word_count: 250
+    excessive_punctuation_penalty: 0.1
+    title_caps_penalty: 0.1

@@ -1,5 +1,17 @@
 # Helix Feature Ideas
 
+## Implemented MVP baseline
+
+- Inbox endpoint shipped: `GET /inbox` and `GET /v1/inbox` with `top|recent|long_reads|watchlist` modes.
+- Watchlist config and read endpoints shipped: `GET /watchlist`, `GET /watchlist/matches` (+ `/v1`).
+- Research projects config and read endpoints shipped: `GET /projects`, `GET /projects/{slug}/articles` (+ `/v1`).
+- Dead-letter queue operations shipped: `GET /queues/dead`, retry/purge actions (+ `/v1`).
+- Cluster timeline shipped: `GET /clusters/{cluster_id}/timeline` (+ `/v1`).
+- Home Assistant webhook skeleton shipped under `/home-assistant` (+ `/v1`).
+- Jarvis contract v2 shipped with legacy payload compatibility.
+
+The ideas below remain useful for deeper iterations beyond the current MVP baseline.
+
 ## Intelligent Inbox
 
 Objective: surface the right articles first and hide low-value noise.

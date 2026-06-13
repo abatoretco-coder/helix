@@ -1,10 +1,19 @@
-watchlist:
-  entities:
-    - OpenAI
-    - Nvidia
-    - Docker
-  keywords:
-    - local llm
-    - regulation
-    - supply chain
-  priority_boost: 0.1
+entities:
+  - name: OpenAI
+    type: company
+    priority: 1
+  - name: Mistral
+    type: company
+    priority: 1
+  - name: Nvidia
+    type: company
+    priority: 1
+  - name: Servier
+    type: company
+    priority: 2
+  - name: CEVA
+    type: company
+    priority: 2
+  - name: Kuehne+Nagel
+    type: company
+    priority: 2

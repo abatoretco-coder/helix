@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { Article, Briefing, PipelineStatus, SourceHealthResponse, Source } from "@/types";
@@ -13,6 +14,8 @@ export default function Dashboard() {
   const [sourceHealth, setSourceHealth] = useState<SourceHealthResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [actionBySource, setActionBySource] = useState<Record<number, string>>({});
+  const [actionFeedback, setActionFeedback] = useState<string>("");
 
   useEffect(() => {
     const load = async () => {
@@ -44,6 +47,35 @@ export default function Dashboard() {
     load();
   }, []);
 
+  const refreshSourcePanels = async () => {
+    const [sourcesData, sourceHealthData] = await Promise.all([
+      api.getSources(),
+      api.getSourceHealth(),
+    ]);
+    setSources(sourcesData);
+    setSourceHealth(sourceHealthData);
+  };
+
+  const runSourceAction = async (sourceId: number, action: "enable" | "disable" | "refresh" | "reset-errors") => {
+    setActionBySource((prev) => ({ ...prev, [sourceId]: action }));
+    try {
+      if (action === "enable") await api.enableSource(sourceId);
+      if (action === "disable") await api.disableSource(sourceId);
+      if (action === "refresh") await api.refreshSource(sourceId);
+      if (action === "reset-errors") await api.resetSourceErrors(sourceId);
+      await refreshSourcePanels();
+      setActionFeedback(`Source action '${action}' completed.`);
+    } catch (err) {
+      setActionFeedback(err instanceof Error ? err.message : "Source action failed");
+    } finally {
+      setActionBySource((prev) => {
+        const next = { ...prev };
+        delete next[sourceId];
+        return next;
+      });
+    }
+  };
+
   if (loading) return <LoadingSpinner />;
 
   const enabledSources = sources.filter((s) => s.enabled).length;
@@ -65,8 +97,11 @@ export default function Dashboard() {
         <div className="hero-panel">
           <span className="hero-panel-label">Updated</span>
           <strong>{pipelineStatus?.generated_at ? new Date(pipelineStatus.generated_at).toLocaleString() : "—"}</strong>
+          <Link href="/operations" className="ops-link">Open operations</Link>
         </div>
       </header>
+
+      {actionFeedback && <p className="action-feedback">{actionFeedback}</p>}
 
       <div className="stats-grid">
         <div className="stat-card">
@@ -141,6 +176,15 @@ export default function Dashboard() {
                   <div>
                     <strong>{item.name}</strong>
                     <p>{item.source_type} · {item.category} · priority {item.priority}</p>
+                    <div className="source-actions">
+                      {item.enabled ? (
+                        <button disabled={Boolean(actionBySource[item.id])} onClick={() => runSourceAction(item.id, "disable")}>Disable</button>
+                      ) : (
+                        <button disabled={Boolean(actionBySource[item.id])} onClick={() => runSourceAction(item.id, "enable")}>Enable</button>
+                      )}
+                      <button disabled={Boolean(actionBySource[item.id])} onClick={() => runSourceAction(item.id, "refresh")}>Refresh</button>
+                      <button disabled={Boolean(actionBySource[item.id])} onClick={() => runSourceAction(item.id, "reset-errors")}>Reset errors</button>
+                    </div>
                   </div>
                   <div className="source-health-metrics">
                     <span>{item.status}</span>
@@ -223,6 +267,23 @@ export default function Dashboard() {
           display: flex;
           flex-direction: column;
           gap: 0.25rem;
+        }
+
+        .ops-link {
+          margin-top: 0.4rem;
+          font-weight: 700;
+          color: var(--color-primary);
+          text-decoration: none;
+        }
+
+        .ops-link:hover {
+          text-decoration: underline;
+        }
+
+        .action-feedback {
+          margin: 0 0 1rem;
+          color: var(--color-primary);
+          font-weight: 600;
         }
 
         .hero-panel-label {
@@ -355,6 +416,22 @@ export default function Dashboard() {
           justify-content: space-between;
           gap: 1rem;
           align-items: flex-start;
+        }
+
+        .source-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.4rem;
+          margin-top: 0.5rem;
+        }
+
+        .source-actions button {
+          border: 1px solid var(--color-border);
+          border-radius: 8px;
+          background: white;
+          padding: 0.3rem 0.55rem;
+          font-size: 0.8rem;
+          font-weight: 600;
         }
 
         .source-health-item.ok {

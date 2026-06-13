@@ -4,6 +4,7 @@
 
 - Add `article_ai.anti_dopamine_score` as `numeric(4,3)`.
 - Add optional JSON columns for watchlist/research annotations if needed.
+- Add `raw_items.next_retry_at` (`timestamp`) for scheduled backoff retries.
 
 ## Why deferred
 

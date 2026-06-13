@@ -212,8 +212,24 @@ X-API-Token: <HELIX_API_TOKEN>
 Dashboard calls to `/v1` can forward the same token with:
 
 ```bash
-NEXT_PUBLIC_API_TOKEN=<HELIX_API_TOKEN>
+NEXT_PUBLIC_HELIX_API_TOKEN=<HELIX_API_TOKEN>
 ```
+
+LAN note: this is acceptable for local NAS-only usage. Do not expose a public dashboard with this token in browser-delivered env vars. For external exposure, add server-side auth.
+
+Additional NAS intelligence endpoints:
+
+- `GET /v1/queues/dead/{queue_name}`
+- `POST /v1/queues/dead/{queue_name}/retry`
+- `POST /v1/queues/dead/{queue_name}/purge`
+- `GET /v1/watchlist`
+- `GET /v1/watchlist/matches`
+- `GET /v1/projects`
+- `GET /v1/projects/{slug}/articles`
+- `GET /v1/inbox`
+- `GET /v1/clusters/{cluster_id}/timeline`
+- `POST /v1/home-assistant/briefing-ready`
+- `POST /v1/home-assistant/alert`
 
 ---
 

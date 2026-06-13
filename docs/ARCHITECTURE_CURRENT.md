@@ -43,6 +43,10 @@ sources.yaml / DB sources
 - queue:ai
 - queue:cluster
 - queue:briefing
+- queue:extract:dead
+- queue:ai:dead
+- queue:cluster:dead
+- queue:briefing:dead
 
 ## Main tables
 
@@ -67,3 +71,8 @@ sources.yaml / DB sources
 - POST /briefings/generate
 - POST /jarvis/query
 - GET /metrics
+- GET /ops/summary
+- GET /queues/dead
+- GET /watchlist
+- GET /projects
+- GET /inbox

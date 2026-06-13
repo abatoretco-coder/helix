@@ -20,7 +20,7 @@ CLUSTER_SIMILARITY_THRESHOLD = float(os.environ.get("CLUSTER_SIMILARITY_THRESHOL
 CLUSTER_WINDOW_HOURS = int(os.environ.get("CLUSTER_WINDOW_HOURS", "72"))
 CLUSTER_MAX_RETRIES = int(os.environ.get("CLUSTER_MAX_RETRIES", "3"))
 LOW_POWER_MODE = os.environ.get("LOW_POWER_MODE", "false").lower() in {"1", "true", "yes", "on"}
-WORKER_RATE_LIMIT_MS = int(os.environ.get("WORKER_RATE_LIMIT_MS", "0"))
+WORKER_RATE_LIMIT_MS = int(os.environ.get("CLUSTER_WORKER_RATE_LIMIT_MS", os.environ.get("WORKER_RATE_LIMIT_MS", "0")))
 
 
 def _decode_retry_payload(raw: str) -> tuple[str, int]:

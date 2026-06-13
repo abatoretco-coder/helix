@@ -17,8 +17,12 @@ echo "[dev-check] validating source registry"
 python scripts/validate_sources.py --strict
 
 if command -v npm >/dev/null 2>&1; then
-  echo "[dev-check] running dashboard lint when available"
-  npm --prefix dashboard run lint --if-present
+  if grep -q '"lint"' dashboard/package.json; then
+    echo "[dev-check] running dashboard lint"
+    npm --prefix dashboard run lint
+  else
+    echo "[dev-check][warn] dashboard lint script not found; skipping"
+  fi
 fi
 
 echo "[dev-check] checking running containers"

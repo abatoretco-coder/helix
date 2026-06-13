@@ -8,6 +8,24 @@ import { ErrorMessage, LoadingSpinner } from "@/components/ArticleCard";
 const PIPELINE_QUEUES = ["extract", "ai", "cluster", "briefing"] as const;
 type PipelineQueueName = (typeof PIPELINE_QUEUES)[number];
 
+const EXPECTED_SERVICES = [
+  "postgres",
+  "redis",
+  "minio",
+  "morss",
+  "meilisearch",
+  "ollama",
+  "api",
+  "freshrss",
+  "worker_collect",
+  "worker_extract",
+  "worker_ai",
+  "worker_cluster",
+  "worker_briefing",
+  "dashboard",
+  "prometheus",
+];
+
 export default function OperationsPage() {
   const [summary, setSummary] = useState<OpsSummary | null>(null);
   const [deadOverview, setDeadOverview] = useState<DeadQueueOverview | null>(null);
@@ -40,7 +58,7 @@ export default function OperationsPage() {
   const loadDeadQueue = async (queue: PipelineQueueName) => {
     setQueueAction((prev) => ({ ...prev, [queue]: "load" }));
     try {
-      const detail = await api.getDeadQueue(queue, 100);
+      const detail = await api.getDeadQueueItems(queue, 100);
       setDeadDetails((prev) => ({ ...prev, [queue]: detail }));
       setError("");
     } catch (err) {
@@ -72,6 +90,9 @@ export default function OperationsPage() {
   };
 
   const purgeDeadQueue = async (queue: PipelineQueueName) => {
+    if (!window.confirm(`Purge dead-letter queue '${queue}'? This cannot be undone.`)) {
+      return;
+    }
     setQueueAction((prev) => ({ ...prev, [queue]: "purge" }));
     try {
       await api.purgeDeadQueue(queue);
@@ -112,6 +133,8 @@ export default function OperationsPage() {
           <span className="hero-panel-label">Dead queue items</span>
           <strong>{totalDead}</strong>
           <small>{summary?.generated_at ? new Date(summary.generated_at).toLocaleString() : "—"}</small>
+          <small>LLM: {summary?.configured_models.llm_model || "n/a"}</small>
+          <small>Embedding: {summary?.configured_models.embedding_model || "n/a"}</small>
           <button onClick={() => load(true)} disabled={refreshing}>
             {refreshing ? "Refreshing..." : "Refresh"}
           </button>
@@ -145,6 +168,39 @@ export default function OperationsPage() {
             )}
           </article>
         ))}
+      </section>
+
+      <section className="ops-metrics-grid">
+        <article className="metric-card">
+          <h3>Pipeline Metrics</h3>
+          <p>Raw items today: {summary?.status.pipeline.raw_items_today ?? 0}</p>
+          <p>Articles today: {summary?.status.pipeline.articles_today ?? 0}</p>
+          <p>AI processed today: {summary?.status.pipeline.ai_processed_today ?? 0}</p>
+          <p>Briefings today: {summary?.status.pipeline.briefings_today ?? 0}</p>
+        </article>
+        <article className="metric-card">
+          <h3>Source Health Summary</h3>
+          <p>Total: {summary?.source_health_summary.total ?? 0}</p>
+          <p>Enabled: {summary?.source_health_summary.enabled ?? 0}</p>
+          <p>With errors: {summary?.source_health_summary.with_errors ?? 0}</p>
+          <p>High error: {summary?.source_health_summary.high_error ?? 0}</p>
+        </article>
+        <article className="metric-card">
+          <h3>System Flags</h3>
+          <p>Low power mode: {summary?.low_power_mode ? "enabled" : "disabled"}</p>
+          <p>Backup path: {summary?.backup.path || "n/a"}</p>
+          <p>Backup exists: {summary?.backup.exists ? "yes" : "no"}</p>
+          <p>Obsidian export: {summary?.obsidian_export.enabled ? "enabled" : "disabled"}</p>
+        </article>
+      </section>
+
+      <section className="services-panel">
+        <h2>Expected services</h2>
+        <div className="services-grid">
+          {EXPECTED_SERVICES.map((name) => (
+            <span key={name} className="service-chip">{name}</span>
+          ))}
+        </div>
       </section>
 
       <section className="errors-panel">
@@ -222,6 +278,54 @@ export default function OperationsPage() {
           grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
           gap: 1rem;
           margin-bottom: 1.5rem;
+        }
+
+        .ops-metrics-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+          gap: 1rem;
+          margin-bottom: 1.5rem;
+        }
+
+        .metric-card {
+          border: 1px solid var(--color-border);
+          border-radius: 14px;
+          background: rgba(255, 255, 255, 0.8);
+          padding: 1rem;
+        }
+
+        .metric-card h3 {
+          margin: 0 0 0.6rem;
+        }
+
+        .metric-card p {
+          margin: 0.3rem 0;
+        }
+
+        .services-panel {
+          border: 1px solid var(--color-border);
+          border-radius: 14px;
+          background: rgba(255, 255, 255, 0.8);
+          padding: 1rem;
+          margin-bottom: 1.5rem;
+        }
+
+        .services-panel h2 {
+          margin: 0 0 0.8rem;
+        }
+
+        .services-grid {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.45rem;
+        }
+
+        .service-chip {
+          border: 1px solid var(--color-border);
+          border-radius: 999px;
+          padding: 0.25rem 0.6rem;
+          font-size: 0.82rem;
+          background: var(--color-surface);
         }
 
         .stat-card {

@@ -153,10 +153,16 @@ def compute_scores(
     profile_interests = user_profile.get("interests", {}) if isinstance(user_profile, dict) else {}
     negative_keywords = user_profile.get("negative_keywords", {}) if isinstance(user_profile, dict) else {}
     anti_dopamine = user_profile.get("anti_dopamine", {}) if isinstance(user_profile, dict) else {}
-    anti_patterns = [str(x).lower() for x in (anti_dopamine.get("patterns", []) if isinstance(anti_dopamine, dict) else [])]
-    anti_weight = float(anti_dopamine.get("weight", 0.2)) if isinstance(anti_dopamine, dict) else 0.2
+    anti_enabled = bool(anti_dopamine.get("enabled", False)) if isinstance(anti_dopamine, dict) else False
+    clickbait_keywords = [
+        str(x).lower() for x in (anti_dopamine.get("clickbait_keywords", []) if isinstance(anti_dopamine, dict) else [])
+    ]
+    min_word_count = int(anti_dopamine.get("min_word_count", 250)) if isinstance(anti_dopamine, dict) else 250
+    excessive_punctuation_penalty = float(anti_dopamine.get("excessive_punctuation_penalty", 0.1)) if isinstance(anti_dopamine, dict) else 0.1
+    title_caps_penalty = float(anti_dopamine.get("title_caps_penalty", 0.1)) if isinstance(anti_dopamine, dict) else 0.1
     boost_entities = [str(item).lower() for item in (user_profile.get("boost_entities", []) or [])]
     article_text = f"{getattr(article, 'title', '') or ''} {getattr(article, 'description', '') or ''} {getattr(article, 'text_content', '') or ''}".lower()
+    article_title = str(getattr(article, "title", "") or "")
 
     # Topic interest score
     cat_lower = (category or "").lower()
@@ -196,10 +202,27 @@ def compute_scores(
             negative_penalty += abs(float(penalty)) * 0.1
 
     anti_dopamine_score = 0.0
-    for pattern in anti_patterns:
-        if pattern and pattern in article_text:
-            anti_dopamine_score += 0.2
-    anti_dopamine_score = min(anti_dopamine_score, 1.0)
+    matched_negative_keywords: list[str] = []
+    if anti_enabled:
+        for keyword in clickbait_keywords:
+            if keyword and keyword in article_text:
+                matched_negative_keywords.append(keyword)
+        anti_dopamine_score += min(len(matched_negative_keywords) * 0.05, 0.4)
+
+        if int(getattr(article, "word_count", 0) or 0) < min_word_count:
+            anti_dopamine_score += 0.1
+
+        punctuation_count = article_title.count("!") + article_title.count("?")
+        if punctuation_count >= 3:
+            anti_dopamine_score += excessive_punctuation_penalty
+
+        letters = [c for c in article_title if c.isalpha()]
+        if letters:
+            caps_ratio = sum(1 for c in letters if c.isupper()) / len(letters)
+            if caps_ratio > 0.7 and len(letters) > 8:
+                anti_dopamine_score += title_caps_penalty
+
+    anti_dopamine_score = min(max(anti_dopamine_score, 0.0), 1.0)
 
     personal_relevance_score = min(
         max(
@@ -207,7 +230,7 @@ def compute_scores(
             + 0.5 * profile_topic_score
             + entity_bonus
             - negative_penalty
-            - (anti_dopamine_score * anti_weight),
+            - anti_dopamine_score,
             0.0,
         ),
         1.0,
@@ -260,6 +283,12 @@ def compute_scores(
         + src_score       * weights.get("source", 0.15)
         + quality_norm    * weights.get("quality", 0.10)
     )
+    final = max(0.0, min(final - (anti_dopamine_score * 0.15), 1.0))
+
+    if isinstance(entities, dict):
+        entities.setdefault("_scoring", {})
+        entities["_scoring"]["dopamine_penalty_score"] = round(anti_dopamine_score, 3)
+        entities["_scoring"]["matched_negative_keywords"] = matched_negative_keywords
 
     return {
         "importance_score":          round(topic_score, 3),
@@ -268,5 +297,5 @@ def compute_scores(
         "novelty_score":             round(novelty_score, 3),
         "personal_relevance_score":  round(personal_relevance_score, 3),
         "quality_score":             round(quality_norm, 3),
-        "final_score":               round(min(final, 1.0), 3),
+        "final_score":               round(final, 3),
     }

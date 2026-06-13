@@ -123,6 +123,31 @@ export interface OpsSummary {
   generated_at: string;
   status: PipelineStatus;
   queues: PipelineQueuesResponse;
-  dead_letter: DeadQueueOverview;
+  dead_letter: {
+    queues: Record<string, number>;
+    total: number;
+  };
+  recent_errors_count: number;
   recent_errors: PipelineErrorsResponse;
+  source_health_summary: {
+    total: number;
+    enabled: number;
+    disabled: number;
+    with_errors: number;
+    high_error: number;
+  };
+  configured_models: {
+    llm_model: string;
+    embedding_model: string;
+  };
+  low_power_mode: boolean;
+  backup: {
+    path: string;
+    exists: boolean;
+  };
+  obsidian_export: {
+    enabled: boolean;
+    path: string;
+    exists: boolean;
+  };
 }

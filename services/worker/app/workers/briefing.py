@@ -32,6 +32,8 @@ DAILY_BRIEFING_MINUTE = int(os.environ.get("DAILY_BRIEFING_MINUTE", "30"))
 DAILY_BRIEFING_CATEGORY = os.environ.get("DAILY_BRIEFING_CATEGORY", os.environ.get("SCHEDULER_BRIEFING_CATEGORY", "all"))
 BRIEFING_TICK_SECONDS = int(os.environ.get("BRIEFING_TICK_SECONDS", os.environ.get("SCHEDULER_TICK_SECONDS", "30")))
 BRIEFING_MAX_RETRIES = int(os.environ.get("BRIEFING_MAX_RETRIES", "3"))
+LOW_POWER_MODE = os.environ.get("LOW_POWER_MODE", "false").lower() in {"1", "true", "yes", "on"}
+WORKER_RATE_LIMIT_MS = int(os.environ.get("BRIEFING_WORKER_RATE_LIMIT_MS", os.environ.get("WORKER_RATE_LIMIT_MS", "0")))
 
 # The daily scheduler is intentionally embedded in worker_briefing to avoid one more container.
 
@@ -53,6 +55,14 @@ def _requeue_or_dead(payload: str, retry_count: int, error: str) -> None:
         enqueue("briefing", {"payload": payload, "retry_count": next_retry})
     else:
         enqueue_dead("briefing", payload, reason=error, retry_count=retry_count)
+
+
+def _loop_pause() -> None:
+    delay_ms = WORKER_RATE_LIMIT_MS
+    if LOW_POWER_MODE and delay_ms == 0:
+        delay_ms = 150
+    if delay_ms > 0:
+        time.sleep(delay_ms / 1000.0)
 
 
 def _local_now() -> datetime:
@@ -151,6 +161,12 @@ def _build_markdown(period: str, period_date: date, category: str, articles: lis
     ]
 
     lines: list[str] = [header, "", *meta, ""]
+    if not articles:
+        lines.extend([
+            "No articles available for this date/category.",
+            "",
+        ])
+
     for idx, article in enumerate(articles, start=1):
         ai = article.ai
         source_name = article.source.name if article.source else "Unknown"
@@ -290,12 +306,17 @@ def main() -> None:
             payload, retry_count = _decode_retry_payload(raw)
             _process_payload(payload)
         except ValueError as exc:
+            if raw:
+                payload, retry_count = _decode_retry_payload(raw)
+                enqueue_dead("briefing", payload, reason=f"invalid payload: {exc}", retry_count=retry_count)
             log.warning("briefing_invalid_queue_payload", raw=raw, error=str(exc))
         except Exception as exc:
             if raw:
                 payload, retry_count = _decode_retry_payload(raw)
                 _requeue_or_dead(payload, retry_count, str(exc))
             log.error("briefing_loop_error", error=str(exc), raw=raw)
+        finally:
+            _loop_pause()
 
 
 if __name__ == "__main__":

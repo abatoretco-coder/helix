@@ -16,11 +16,17 @@ RESTORE_CONFIRM="${RESTORE_CONFIRM:-false}"
 
 if [ "$RESTORE_CONFIRM" != "true" ]; then
   echo "[restore_all] Refusing to run without RESTORE_CONFIRM=true"
-  echo "[restore_all] Example: RESTORE_CONFIRM=true $0 backups/file.sql.gz"
+  echo "[restore_all] Example: RESTORE_CONFIRM=true $0 backups/newsdb_YYYYMMDD_HHMMSS.sql.gz backups/config_YYYYMMDD_HHMMSS.tar.gz"
   exit 1
 fi
 
+echo "[restore_all][warning] This operation may overwrite live data."
+
 if [ "$SKIP_DB_RESTORE" != "true" ]; then
+  if [ ! -f "$POSTGRES_BACKUP" ]; then
+    echo "[restore_all] PostgreSQL backup not found: $POSTGRES_BACKUP"
+    exit 1
+  fi
   "$PROJECT_DIR/scripts/db_restore.sh" "$POSTGRES_BACKUP"
 else
   echo "[restore_all] SKIP_DB_RESTORE=true -> skipping database restore"
