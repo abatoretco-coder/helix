@@ -1,18 +1,21 @@
 from collections import Counter
+import os
 from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
+import redis.asyncio as redis_async
 
 from app.db.models import Article, ArticleAI, ArticleCluster, Briefing, Cluster, ProcessingLog, RawItem, Source
 from app.db.session import get_db
-from app.storage.redis_queue import queue_size
 
 router = APIRouter()
 
 PIPELINE_QUEUES = ("extract", "ai", "cluster", "briefing")
+REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
+_redis_client = None
 
 
 def _iso(value) -> str | None:
@@ -75,7 +78,13 @@ async def _recent_duration_stats(db: AsyncSession) -> dict[str, float]:
 
 
 async def _queue_depths() -> dict[str, int]:
-    return {queue_name: queue_size(queue_name) for queue_name in PIPELINE_QUEUES}
+    global _redis_client
+    try:
+        if _redis_client is None:
+            _redis_client = redis_async.from_url(REDIS_URL, decode_responses=True)
+        return {queue_name: int(await _redis_client.llen(f"queue:{queue_name}")) for queue_name in PIPELINE_QUEUES}
+    except Exception:
+        return {queue_name: 0 for queue_name in PIPELINE_QUEUES}
 
 
 @router.get("/pipeline/metrics")
