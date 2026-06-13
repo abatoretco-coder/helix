@@ -3,20 +3,38 @@ Worker briefing - consumes queue:briefing and generates markdown briefings.
 """
 from __future__ import annotations
 
+import os
+import time
 from datetime import date, datetime, timezone
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import desc, func, select
 from sqlalchemy.orm import selectinload
 
 from app.db.models import Article, ArticleAI, Briefing
 from app.storage.postgres import get_session, log_processing
-from app.storage.redis_queue import dequeue
+from app.storage.redis_queue import dequeue, enqueue
 from app.utils.logging import get_logger, setup_logging
 
 log = get_logger("worker.briefing")
 
 TOP_ARTICLES_LIMIT = 25
 BRIEFING_ITEMS_LIMIT = 10
+DAILY_BRIEFING_ENABLED = os.environ.get("DAILY_BRIEFING_ENABLED", os.environ.get("SCHEDULER_ENABLE_DAILY_BRIEFING", "true")).lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+DAILY_BRIEFING_TIMEZONE = os.environ.get("DAILY_BRIEFING_TIMEZONE", "Europe/Paris")
+DAILY_BRIEFING_HOUR = int(os.environ.get("DAILY_BRIEFING_HOUR", "7"))
+DAILY_BRIEFING_MINUTE = int(os.environ.get("DAILY_BRIEFING_MINUTE", "30"))
+DAILY_BRIEFING_CATEGORY = os.environ.get("DAILY_BRIEFING_CATEGORY", os.environ.get("SCHEDULER_BRIEFING_CATEGORY", "all"))
+BRIEFING_TICK_SECONDS = int(os.environ.get("BRIEFING_TICK_SECONDS", os.environ.get("SCHEDULER_TICK_SECONDS", "30")))
+
+
+def _local_now() -> datetime:
+    return datetime.now(ZoneInfo(DAILY_BRIEFING_TIMEZONE))
 
 
 def _parse_payload(payload: str) -> tuple[str, date, str]:
@@ -206,15 +224,46 @@ def _process_payload(payload: str) -> None:
         )
 
 
+def _maybe_enqueue_daily_briefing(last_enqueued_date: date | None) -> date | None:
+    if not DAILY_BRIEFING_ENABLED:
+        return last_enqueued_date
+
+    now_local = _local_now()
+    should_enqueue = (
+        now_local.hour == DAILY_BRIEFING_HOUR
+        and now_local.minute == DAILY_BRIEFING_MINUTE
+        and last_enqueued_date != now_local.date()
+    )
+    if not should_enqueue:
+        return last_enqueued_date
+
+    payload = f"daily:{now_local.date().isoformat()}:{DAILY_BRIEFING_CATEGORY}"
+    enqueue("briefing", payload)
+    log.info("briefing_scheduler_enqueued", payload=payload, timezone=DAILY_BRIEFING_TIMEZONE)
+    return now_local.date()
+
+
 def main() -> None:
     setup_logging("worker.briefing")
-    log.info("briefing_worker_start")
+    log.info(
+        "briefing_worker_start",
+        daily_briefing_enabled=DAILY_BRIEFING_ENABLED,
+        briefing_timezone=DAILY_BRIEFING_TIMEZONE,
+        briefing_hour=DAILY_BRIEFING_HOUR,
+        briefing_minute=DAILY_BRIEFING_MINUTE,
+        briefing_category=DAILY_BRIEFING_CATEGORY,
+        tick_seconds=BRIEFING_TICK_SECONDS,
+    )
+
+    last_daily_briefing_date = None
 
     while True:
         raw = None
         try:
             raw = dequeue("briefing", timeout=5)
             if raw is None:
+                last_daily_briefing_date = _maybe_enqueue_daily_briefing(last_daily_briefing_date)
+                time.sleep(BRIEFING_TICK_SECONDS)
                 continue
             _process_payload(raw)
         except ValueError as exc:

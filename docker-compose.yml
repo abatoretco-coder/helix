@@ -278,33 +278,12 @@ services:
       DATABASE_URL: postgresql+asyncpg://news:${POSTGRES_PASSWORD}@postgres:5432/newsdb
       REDIS_URL: redis://redis:6379/0
       OLLAMA_URL: http://ollama:11434
-      APP_ENV: production
-    volumes:
-      - ./config:/app/config:ro
-
-  # ── Scheduler worker ──────────────────────────────────────────────────────
-
-  worker_scheduler:
-    build:
-      context: ./services/worker
-      dockerfile: Dockerfile
-    container_name: news_worker_scheduler
-    restart: unless-stopped
-    command: python -m app.workers.scheduler
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    environment:
-      DATABASE_URL: postgresql+asyncpg://news:${POSTGRES_PASSWORD}@postgres:5432/newsdb
-      REDIS_URL: redis://redis:6379/0
-      SCHEDULER_ENABLE_DAILY_BRIEFING: ${SCHEDULER_ENABLE_DAILY_BRIEFING:-true}
-      SCHEDULER_TICK_SECONDS: ${SCHEDULER_TICK_SECONDS:-30}
+      DAILY_BRIEFING_ENABLED: ${DAILY_BRIEFING_ENABLED:-true}
       DAILY_BRIEFING_TIMEZONE: ${DAILY_BRIEFING_TIMEZONE:-Europe/Paris}
       DAILY_BRIEFING_HOUR: ${DAILY_BRIEFING_HOUR:-7}
       DAILY_BRIEFING_MINUTE: ${DAILY_BRIEFING_MINUTE:-30}
-      SCHEDULER_BRIEFING_CATEGORY: ${SCHEDULER_BRIEFING_CATEGORY:-all}
+      DAILY_BRIEFING_CATEGORY: ${DAILY_BRIEFING_CATEGORY:-all}
+      BRIEFING_TICK_SECONDS: ${BRIEFING_TICK_SECONDS:-30}
       APP_ENV: production
     volumes:
       - ./config:/app/config:ro

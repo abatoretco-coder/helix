@@ -142,14 +142,13 @@ sources:
 
 ## 🔄 Workers
 
-**Six async workers** consume Redis queues:
+**Five async workers** consume Redis queues:
 
 1. **collect** — reads sources, calls collectors (RSS, Reddit, GitHub, etc.), inserts raw items
 2. **extract** — fetches URLs, extracts full text via morss → trafilatura → news-please → newspaper4k → playwright
 3. **ai** — summarizes, classifies, extracts entities, generates embeddings, scores articles
 4. **cluster** — consumes `queue:cluster` and groups semantically similar articles
-5. **briefing** — consumes `queue:briefing` and generates daily markdown briefings
-6. **scheduler** — enqueues recurring jobs (daily briefing trigger)
+5. **briefing** — consumes `queue:briefing`, generates daily markdown briefings, and enqueues the daily briefing trigger
 
 Watch logs:
 ```bash
@@ -158,7 +157,6 @@ docker compose logs -f worker_extract
 docker compose logs -f worker_ai
 docker compose logs -f worker_cluster
 docker compose logs -f worker_briefing
-docker compose logs -f worker_scheduler
 ```
 
 Dev validation:
