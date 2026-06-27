@@ -15,10 +15,9 @@ from __future__ import annotations
 
 import os
 import time
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import select, update
+from sqlalchemy import select
 
 from app.db.models import RawItem, Article
 from app.extractors.article import extract_article
@@ -31,6 +30,9 @@ from app.utils.logging import get_logger, setup_logging
 log = get_logger("worker.extract")
 
 EXTRACT_MAX_RETRIES = int(os.environ.get("EXTRACT_MAX_RETRIES", "3"))
+EXTRACT_RETRY_BACKOFF_SECONDS = int(os.environ.get("EXTRACT_RETRY_BACKOFF_SECONDS", "300"))
+EXTRACT_RETRY_MAX_BACKOFF_SECONDS = int(os.environ.get("EXTRACT_RETRY_MAX_BACKOFF_SECONDS", "3600"))
+EXTRACT_RETRY_SCAN_LIMIT = int(os.environ.get("EXTRACT_RETRY_SCAN_LIMIT", "25"))
 LOW_POWER_MODE = os.environ.get("LOW_POWER_MODE", "false").lower() in {"1", "true", "yes", "on"}
 WORKER_RATE_LIMIT_MS = int(os.environ.get("EXTRACT_WORKER_RATE_LIMIT_MS", os.environ.get("WORKER_RATE_LIMIT_MS", "0")))
 
@@ -60,6 +62,35 @@ def _loop_pause() -> None:
         delay_ms = 150
     if delay_ms > 0:
         time.sleep(delay_ms / 1000.0)
+
+
+def _retry_at(retry_count: int) -> datetime:
+    delay = min(EXTRACT_RETRY_BACKOFF_SECONDS * (2 ** max(retry_count - 1, 0)), EXTRACT_RETRY_MAX_BACKOFF_SECONDS)
+    return datetime.now(timezone.utc) + timedelta(seconds=delay)
+
+
+def _enqueue_due_retries() -> int:
+    now = datetime.now(timezone.utc)
+    with get_session() as session:
+        rows = (
+            session.execute(
+                select(RawItem)
+                .where(RawItem.status == "retry_pending")
+                .where(RawItem.next_retry_at.is_not(None))
+                .where(RawItem.next_retry_at <= now)
+                .order_by(RawItem.next_retry_at.asc())
+                .limit(EXTRACT_RETRY_SCAN_LIMIT)
+            )
+            .scalars()
+            .all()
+        )
+        for raw_item in rows:
+            raw_item.status = "queued_for_extraction"
+            raw_item.error_message = None
+            enqueue("extract", {"payload": str(raw_item.id), "retry_count": int(raw_item.retry_count or 0)})
+        if rows:
+            log.info("extract_due_retries_enqueued", count=len(rows))
+        return len(rows)
 
 
 def _compute_quality_score(article) -> float:
@@ -120,18 +151,22 @@ def _process_item(raw_item_id: int) -> None:
             raw_item.retry_count = int(raw_item.retry_count or 0) + 1
             current_retry = int(raw_item.retry_count)
             if current_retry <= EXTRACT_MAX_RETRIES:
+                raw_item.next_retry_at = _retry_at(current_retry)
                 mark_raw_item_status(session, raw_item.id, "retry_pending", "no content extracted")
-                enqueue("extract", {"payload": str(raw_item.id), "retry_count": current_retry})
                 log_processing(
                     session,
                     "raw_item",
                     raw_item.id,
                     "extract",
                     "retry",
-                    f"no content extracted; retry={current_retry}/{EXTRACT_MAX_RETRIES}",
+                    (
+                        f"no content extracted; retry={current_retry}/{EXTRACT_MAX_RETRIES} "
+                        f"next_retry_at={raw_item.next_retry_at.isoformat()}"
+                    ),
                 )
-                log.warning("extract_empty_retry", url=url, retry=current_retry)
+                log.warning("extract_empty_retry_scheduled", url=url, retry=current_retry, next_retry_at=raw_item.next_retry_at.isoformat())
             else:
+                raw_item.next_retry_at = None
                 mark_raw_item_status(session, raw_item.id, "failed", "no content extracted")
                 enqueue_dead("extract", str(raw_item.id), reason="no content extracted", retry_count=current_retry)
                 log_processing(
@@ -152,6 +187,7 @@ def _process_item(raw_item_id: int) -> None:
         ).scalar_one_or_none()
 
         if existing:
+            raw_item.next_retry_at = None
             mark_raw_item_status(session, raw_item.id, "duplicate")
             log_processing(session, "raw_item", raw_item.id, "extract", "skip", "duplicate content")
             log.debug("extract_duplicate", url=url)
@@ -217,6 +253,7 @@ def _process_item(raw_item_id: int) -> None:
         session.flush()
         article_id = article.id
 
+        raw_item.next_retry_at = None
         mark_raw_item_status(session, raw_item.id, "extracted")
         enqueue("ai", str(article_id))
 
@@ -237,6 +274,7 @@ def main():
         try:
             raw = dequeue("extract", timeout=5)
             if raw is None:
+                _enqueue_due_retries()
                 continue
             payload, retry_count = _decode_retry_payload(raw)
             raw_item_id = int(payload.strip())

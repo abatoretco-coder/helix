@@ -114,6 +114,7 @@ required_services=(
   worker_ai
   worker_cluster
   worker_briefing
+  worker_cleanup
   dashboard
   prometheus
 )

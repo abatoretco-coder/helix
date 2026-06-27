@@ -1,5 +1,3 @@
-from datetime import datetime
-from typing import Optional
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
@@ -7,13 +5,12 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     Column,
+    Date,
     DateTime,
-    Float,
     ForeignKey,
     Index,
     Integer,
     Numeric,
-    String,
     Text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
@@ -64,6 +61,7 @@ class RawItem(Base):
     status          = Column(Text, default="new")
     error_message   = Column(Text)
     retry_count     = Column(Integer, default=0)
+    next_retry_at   = Column(DateTime)
     created_at      = Column(DateTime, server_default=func.now())
     updated_at      = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
@@ -165,7 +163,7 @@ class Briefing(Base):
 
     id           = Column(BigInteger, primary_key=True)
     period       = Column(Text, nullable=False)
-    period_date  = Column(DateTime, nullable=False)
+    period_date  = Column(Date, nullable=False)
     category     = Column(Text, default="all")
     content      = Column(Text)
     article_ids  = Column(ARRAY(BigInteger))
@@ -329,9 +327,56 @@ class RetentionJob(Base):
     created_at = Column(DateTime, server_default=func.now())
 
 
+class AgentMemory(Base):
+    __tablename__ = "agent_memories"
+
+    id = Column(BigInteger, primary_key=True)
+    agent_id = Column(Text, nullable=False, default="jarvis")
+    memory_type = Column(Text, nullable=False, default="summary")
+    title = Column(Text, nullable=False)
+    content = Column(Text, nullable=False)
+    language = Column(Text, default="fr")
+    tags = Column(ARRAY(Text), default=[])
+    source_article_ids = Column(ARRAY(BigInteger), default=[])
+    source_urls = Column(ARRAY(Text), default=[])
+    confidence = Column(Numeric(4, 3))
+    memory_metadata = Column("metadata", JSONB)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+class AgentTask(Base):
+    __tablename__ = "agent_tasks"
+
+    id = Column(BigInteger, primary_key=True)
+    agent_id = Column(Text, nullable=False, default="jarvis")
+    task_type = Column(Text, nullable=False, default="synthesis")
+    title = Column(Text, nullable=False)
+    instructions = Column(Text, nullable=False)
+    status = Column(Text, nullable=False, default="queued")
+    priority = Column(Integer, default=2)
+    language = Column(Text, default="fr")
+    input_payload = Column(JSONB)
+    result_payload = Column(JSONB)
+    error_message = Column(Text)
+    source_article_ids = Column(ARRAY(BigInteger), default=[])
+    memory_id = Column(BigInteger, ForeignKey("agent_memories.id", ondelete="SET NULL"))
+    claimed_at = Column(DateTime)
+    completed_at = Column(DateTime)
+    failed_at = Column(DateTime)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
 Index("ix_article_user_state_profile_article", ArticleUserState.profile_id, ArticleUserState.article_id, unique=True)
 Index("ix_watchlist_entities_name", WatchlistEntity.name)
 Index("ix_entity_mentions_article", EntityMention.article_id)
+Index("ix_entity_mentions_watchlist_entity", EntityMention.watchlist_entity_id)
+Index("ix_entity_mentions_article_watchlist_entity", EntityMention.article_id, EntityMention.watchlist_entity_id, unique=True)
 Index("ix_research_projects_slug", ResearchProject.slug, unique=True)
 Index("ix_project_articles_project_article", ProjectArticle.project_id, ProjectArticle.article_id, unique=True)
 Index("ix_alert_rules_event_type", AlertRule.event_type)
+Index("ix_agent_memories_agent_created", AgentMemory.agent_id, AgentMemory.created_at)
+Index("ix_agent_memories_type_created", AgentMemory.memory_type, AgentMemory.created_at)
+Index("ix_agent_tasks_agent_status_priority", AgentTask.agent_id, AgentTask.status, AgentTask.priority)
+Index("ix_agent_tasks_status_created", AgentTask.status, AgentTask.created_at)

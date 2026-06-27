@@ -13,7 +13,7 @@ Returns an ExtractedArticle or None on full failure.
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 
 import requests
@@ -227,7 +227,7 @@ def try_playwright(url: str) -> Optional[ExtractedArticle]:
     to trafilatura. Only triggered when all other methods fail.
     """
     try:
-        from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
+        from playwright.sync_api import sync_playwright
 
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)

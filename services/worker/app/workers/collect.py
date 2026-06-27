@@ -80,9 +80,7 @@ def _load_sources_yaml() -> list[dict]:
 
 def _sync_sources_to_db(session, yaml_sources: list[dict]) -> None:
     """Insert YAML sources into DB if they don't exist yet."""
-    from app.db.models import Source
     for s in yaml_sources:
-        url = s.get("url") or s.get("query") or s.get("subreddit") or s.get("hn_type") or ""
         existing = session.execute(
             select(Source).where(Source.name == s["name"])
         ).scalar_one_or_none()

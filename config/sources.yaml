@@ -1832,3 +1832,914 @@ sources:
   refresh_minutes: 60
   extraction_strategy: rss_then_article
   enabled: true
+
+- name: Le Monde - Une
+  type: rss
+  url: https://www.lemonde.fr/rss/une.xml
+  category: general
+  language: fr
+  country: FR
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Franceinfo - Titres
+  type: rss
+  url: https://www.francetvinfo.fr/titres.rss
+  category: general
+  language: fr
+  country: FR
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Le Figaro - Actualites
+  type: rss
+  url: https://www.lefigaro.fr/rss/figaro_actualites.xml
+  category: general
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Liberation - Tous les articles
+  type: rss
+  url: https://www.liberation.fr/arc/outboundfeeds/rss-all/?outputType=xml
+  category: general
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: 20 Minutes - Une
+  type: rss
+  url: https://www.20minutes.fr/feeds/rss-une.xml
+  category: general
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: RFI - France
+  type: rss
+  url: https://www.rfi.fr/fr/france/rss
+  category: general
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: RFI - Monde
+  type: rss
+  url: https://www.rfi.fr/fr/monde/rss
+  category: geopolitics
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: France 24 - France
+  type: rss
+  url: https://www.france24.com/fr/france/rss
+  category: general
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: France 24 - Monde
+  type: rss
+  url: https://www.france24.com/fr/rss
+  category: geopolitics
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: La Tribune
+  type: rss
+  url: https://www.latribune.fr/feed.xml
+  category: finance
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: BFM Business - Economie
+  type: rss
+  url: https://www.bfmtv.com/rss/economie/
+  category: finance
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Numerama
+  type: rss
+  url: https://www.numerama.com/feed/
+  category: tech
+  language: fr
+  country: FR
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Siecle Digital
+  type: rss
+  url: https://siecledigital.fr/feed/
+  category: tech
+  language: fr
+  country: FR
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: ActuIA
+  type: rss
+  url: https://www.actuia.com/feed/
+  category: ai
+  language: fr
+  country: FR
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: CERT-FR
+  type: rss
+  url: https://www.cert.ssi.gouv.fr/feed/
+  category: cybersecurity
+  language: fr
+  country: FR
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: CNIL
+  type: rss
+  url: https://www.cnil.fr/fr/rss.xml
+  category: regulation
+  language: fr
+  country: FR
+  priority: 1
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Futura Sciences
+  type: rss
+  url: https://www.futura-sciences.com/rss/actualites.xml
+  category: science
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Vie Publique
+  type: rss
+  url: https://www.vie-publique.fr/rss.xml
+  category: regulation
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 90
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Le Grand Continent
+  type: rss
+  url: https://legrandcontinent.eu/fr/feed/
+  category: geopolitics
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 90
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: The Conversation France
+  type: rss
+  url: https://theconversation.com/fr/articles.atom
+  category: science
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 90
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Maddyness
+  type: rss
+  url: https://www.maddyness.com/feed/
+  category: startups
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: FrenchWeb
+  type: rss
+  url: https://www.frenchweb.fr/feed
+  category: startups
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Next INpact
+  type: rss
+  url: https://next.ink/feed/
+  category: tech
+  language: fr
+  country: FR
+  priority: 1
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: ZDNet France
+  type: rss
+  url: https://www.zdnet.fr/feeds/rss/actualites/
+  category: tech
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Clubic
+  type: rss
+  url: https://www.clubic.com/feed/news.rss
+  category: tech
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Developpez.com
+  type: rss
+  url: https://www.developpez.com/index/rss
+  category: tech
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Journal du Geek
+  type: rss
+  url: https://www.journaldugeek.com/feed/
+  category: tech
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Presse Citron
+  type: rss
+  url: https://www.presse-citron.net/feed/
+  category: tech
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Les Numeriques
+  type: rss
+  url: https://www.lesnumeriques.com/rss.xml
+  category: tech
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: The Hacker News
+  type: rss
+  url: https://feeds.feedburner.com/TheHackersNews
+  category: cybersecurity
+  language: en
+  country: global
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: BleepingComputer
+  type: rss
+  url: https://www.bleepingcomputer.com/feed/
+  category: cybersecurity
+  language: en
+  country: global
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: EFF Deeplinks
+  type: rss
+  url: https://www.eff.org/rss/updates.xml
+  category: regulation
+  language: en
+  country: US
+  priority: 2
+  refresh_minutes: 90
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: MIT Technology Review
+  type: rss
+  url: https://www.technologyreview.com/feed/
+  category: tech
+  language: en
+  country: US
+  priority: 1
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Ars Technica
+  type: rss
+  url: https://feeds.arstechnica.com/arstechnica/index
+  category: tech
+  language: en
+  country: US
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Nature
+  type: rss
+  url: https://www.nature.com/nature.rss
+  category: science
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 120
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: ScienceDaily
+  type: rss
+  url: https://www.sciencedaily.com/rss/top.xml
+  category: science
+  language: en
+  country: US
+  priority: 2
+  refresh_minutes: 90
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google AI Blog
+  type: rss
+  url: https://blog.google/technology/ai/rss/
+  category: ai
+  language: en
+  country: US
+  priority: 1
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: DeepMind Blog
+  type: rss
+  url: https://deepmind.google/blog/rss.xml
+  category: ai
+  language: en
+  country: GB
+  priority: 1
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Kubernetes Blog
+  type: rss
+  url: https://kubernetes.io/feed.xml
+  category: tech
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 120
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - IA France
+  type: google_news_rss
+  query: intelligence artificielle France
+  category: ai
+  language: fr
+  country: FR
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Mistral AI France
+  type: google_news_rss
+  query: Mistral AI France
+  category: ai
+  language: fr
+  country: FR
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - OpenAI France
+  type: google_news_rss
+  query: OpenAI France
+  category: ai
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Open Source IA France
+  type: google_news_rss
+  query: open source IA France
+  category: ai
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Modeles IA Europe
+  type: google_news_rss
+  query: modele IA Europe open source
+  category: ai
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Agents IA France
+  type: google_news_rss
+  query: agents IA France entreprise
+  category: ai
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Regulation IA Europe
+  type: google_news_rss
+  query: reglementation IA Europe AI Act
+  category: regulation
+  language: fr
+  country: FR
+  priority: 1
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Donnees personnelles CNIL
+  type: google_news_rss
+  query: donnees personnelles CNIL IA
+  category: regulation
+  language: fr
+  country: FR
+  priority: 1
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Souverainete numerique
+  type: google_news_rss
+  query: souverainete numerique France Europe
+  category: regulation
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Cloud souverain France
+  type: google_news_rss
+  query: cloud souverain France
+  category: tech
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Cybersecurite France ANSSI
+  type: google_news_rss
+  query: cybersecurite France ANSSI
+  category: cybersecurity
+  language: fr
+  country: FR
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Cyberattaque France
+  type: google_news_rss
+  query: cyberattaque France entreprise
+  category: cybersecurity
+  language: fr
+  country: FR
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Vulnerabilite critique
+  type: google_news_rss
+  query: vulnerabilite critique exploitee
+  category: cybersecurity
+  language: fr
+  country: FR
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - French Tech Levees
+  type: google_news_rss
+  query: French Tech levee de fonds startup
+  category: startups
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Deeptech France
+  type: google_news_rss
+  query: startup deeptech France
+  category: startups
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Semi conducteurs Europe
+  type: google_news_rss
+  query: semi-conducteurs Europe France
+  category: tech
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Quantique France
+  type: google_news_rss
+  query: quantique France calcul ordinateur
+  category: science
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Robotique Logistique France
+  type: google_news_rss
+  query: robotique logistique France entrepot
+  category: supply_chain
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Supply Chain France
+  type: google_news_rss
+  query: supply chain France logistique
+  category: supply_chain
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Fret Ferroviaire France
+  type: google_news_rss
+  query: transport ferroviaire fret France
+  category: supply_chain
+  language: fr
+  country: FR
+  priority: 3
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Transition Energetique France
+  type: google_news_rss
+  query: transition energetique France
+  category: climate
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Nucleaire SMR France
+  type: google_news_rss
+  query: nucleaire France EPR SMR
+  category: climate
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Hydrogen France
+  type: google_news_rss
+  query: hydrogene France industrie
+  category: climate
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Batteries Gigafactory France
+  type: google_news_rss
+  query: batteries gigafactory France Europe
+  category: climate
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Pharma France
+  type: google_news_rss
+  query: pharmaceutique France medicament
+  category: pharma
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Biotech Sante France
+  type: google_news_rss
+  query: biotech France sante
+  category: pharma
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Hopital Numerique France
+  type: google_news_rss
+  query: hopital numerique France sante
+  category: pharma
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Agritech France
+  type: google_news_rss
+  query: agriculture technologie France agritech
+  category: science
+  language: fr
+  country: FR
+  priority: 3
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Defense Innovation France
+  type: google_news_rss
+  query: defense France innovation technologie
+  category: geopolitics
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Spatial France Europe
+  type: google_news_rss
+  query: spatial France Europe Ariane
+  category: science
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Geopolitique Europe Afrique
+  type: google_news_rss
+  query: geopolitique Europe Afrique France
+  category: geopolitics
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Ukraine Russie Europe
+  type: google_news_rss
+  query: Ukraine Russie Europe France
+  category: geopolitics
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Chine Europe Commerce
+  type: google_news_rss
+  query: Chine Europe commerce industrie
+  category: geopolitics
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Inflation France
+  type: google_news_rss
+  query: inflation France economie
+  category: finance
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Immobilier Taux France
+  type: google_news_rss
+  query: immobilier France taux credit
+  category: finance
+  language: fr
+  country: FR
+  priority: 3
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Crypto MiCA Europe
+  type: google_news_rss
+  query: regulation crypto Europe MiCA
+  category: finance
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Education Numerique France
+  type: google_news_rss
+  query: education numerique France IA
+  category: regulation
+  language: fr
+  country: FR
+  priority: 3
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Secteur Public IA France
+  type: google_news_rss
+  query: service public IA France administration
+  category: regulation
+  language: fr
+  country: FR
+  priority: 3
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Medias IA France
+  type: google_news_rss
+  query: medias IA France droit auteur
+  category: regulation
+  language: fr
+  country: FR
+  priority: 3
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Emploi IA France
+  type: google_news_rss
+  query: emploi IA France automatisation
+  category: finance
+  language: fr
+  country: FR
+  priority: 3
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - AI Safety Regulation
+  type: google_news_rss
+  query: AI safety regulation
+  category: ai
+  language: en
+  country: US
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - AI Model Release
+  type: google_news_rss
+  query: open source AI model release
+  category: ai
+  language: en
+  country: US
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Semiconductor Supply Chain
+  type: google_news_rss
+  query: semiconductors supply chain
+  category: supply_chain
+  language: en
+  country: US
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Exploited Vulnerability
+  type: google_news_rss
+  query: cybersecurity vulnerability exploited
+  category: cybersecurity
+  language: en
+  country: US
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Pharma Supply Chain
+  type: google_news_rss
+  query: pharma supply chain
+  category: pharma
+  language: en
+  country: US
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Energy Storage
+  type: google_news_rss
+  query: climate tech energy storage
+  category: climate
+  language: en
+  country: US
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Defense Tech Europe
+  type: google_news_rss
+  query: defense technology Europe
+  category: geopolitics
+  language: en
+  country: US
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Space Industry Launch
+  type: google_news_rss
+  query: space industry launch
+  category: science
+  language: en
+  country: US
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Quantum Computing
+  type: google_news_rss
+  query: quantum computing breakthrough
+  category: science
+  language: en
+  country: US
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Warehouse Robotics
+  type: google_news_rss
+  query: robotics warehouse automation
+  category: supply_chain
+  language: en
+  country: US
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Reddit - francepolitique
+  type: reddit
+  subreddit: francepolitique
+  category: geopolitics
+  language: fr
+  country: FR
+  priority: 3
+  refresh_minutes: 120
+  extraction_strategy: reddit
+  enabled: true
+- name: Reddit - vosfinances
+  type: reddit
+  subreddit: vosfinances
+  category: finance
+  language: fr
+  country: FR
+  priority: 3
+  refresh_minutes: 120
+  extraction_strategy: reddit
+  enabled: true

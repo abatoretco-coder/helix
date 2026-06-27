@@ -35,6 +35,25 @@ export interface Article {
   ai?: ArticleAI;
 }
 
+export interface SimilarArticle {
+  id: number;
+  title?: string;
+  url: string;
+  source?: string;
+  published_at?: string | null;
+  summary_short?: string;
+  category?: string;
+  final_score?: number;
+  distance: number;
+  similarity: number;
+}
+
+export interface SimilarArticlesResponse {
+  article_id: number;
+  count: number;
+  items: SimilarArticle[];
+}
+
 export interface Cluster {
   id: number;
   main_title?: string;
@@ -84,15 +103,51 @@ export interface SourceHealthItem extends Source {
   last_success_at?: string | null;
   last_error_at?: string | null;
   errors_24h: number;
+  errors_7d: number;
   items_24h: number;
+  items_7d: number;
   articles_24h: number;
+  articles_7d: number;
   extraction_success_rate_24h?: number | null;
+  extraction_success_rate_7d?: number | null;
+  article_conversion_rate_24h?: number | null;
+  article_conversion_rate_7d?: number | null;
   quality_avg?: number | null;
-  status: "ok" | "warning" | "broken";
+  health_score: number;
+  quality_band: "healthy" | "watch" | "high_value" | "noisy" | "stale" | "broken" | "disabled";
+  dominant_article_language_7d?: string | null;
+  language_mismatch_rate_7d?: number | null;
+  recommendation: SourceRecommendation;
+  diagnostics: string[];
+  status: "ok" | "warning" | "broken" | "disabled";
+}
+
+export interface SourceRecommendation {
+  action:
+    | "keep"
+    | "keep_disabled"
+    | "disable"
+    | "refresh_or_disable"
+    | "lower_priority"
+    | "review_language"
+    | "monitor_errors"
+    | "boost_priority"
+    | "watch_stale";
+  severity: "low" | "medium" | "high";
+  title: string;
+  detail: string;
+  target_priority?: number | null;
 }
 
 export interface SourceHealthResponse {
   count: number;
+  items: SourceHealthItem[];
+}
+
+export interface SourceRecommendationsResponse {
+  count: number;
+  total_actionable: number;
+  by_action: Record<string, number>;
   items: SourceHealthItem[];
 }
 

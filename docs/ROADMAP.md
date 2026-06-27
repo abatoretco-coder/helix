@@ -4,6 +4,8 @@
 
 Helix is being built as a local-first news intelligence system for a NAS: it should ingest reliably, extract clean text, enrich it with AI, and expose the result through a cockpit that is useful every day.
 
+For the current repository audit, applied fixes, and execution-focused roadmap, see [Repository Analysis and Applied Roadmap](REPOSITORY_ANALYSIS_AND_ROADMAP.md).
+
 ### Guiding principles
 - Local-first by default, with no dependency on external SaaS for the core pipeline.
 - Reliability before breadth: every new source or AI feature must preserve end-to-end stability.
@@ -55,7 +57,7 @@ Dependencies:
 - Basic dashboard
 
 ### Tech tasks
-- Add scheduler worker
+- Embed daily scheduler in worker_briefing
 - Improve smoke tests
 - Improve Docker dependencies
 - Improve briefing date fallback
@@ -307,7 +309,7 @@ Dependencies:
 ### Tech tasks
 - Add DLQ
 - Add retry_count and next_retry_at usage
-- Add cleanup worker
+- Extend cleanup worker coverage beyond logs and stale failed/duplicate raw items
 - Add Postgres vacuum/analyze docs
 - Add MinIO lifecycle docs
 - Add Grafana dashboards

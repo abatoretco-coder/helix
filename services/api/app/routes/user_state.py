@@ -102,6 +102,47 @@ async def upsert_article_user_state(
     }
 
 
+@router.get("/articles/{article_id}")
+async def get_article_user_state(
+    article_id: int,
+    profile_id: str = Query(default="default"),
+    db: AsyncSession = Depends(get_db),
+):
+    article = await db.get(Article, article_id)
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+
+    existing = (
+        await db.execute(
+            select(ArticleUserState).where(
+                and_(
+                    ArticleUserState.profile_id == profile_id,
+                    ArticleUserState.article_id == article_id,
+                )
+            )
+        )
+    ).scalar_one_or_none()
+
+    if existing is None:
+        return {
+            "profile_id": profile_id,
+            "article_id": article_id,
+            "is_read": False,
+            "is_saved": False,
+            "is_hidden": False,
+            "updated_at": None,
+        }
+
+    return {
+        "profile_id": profile_id,
+        "article_id": article_id,
+        "is_read": bool(existing.is_read),
+        "is_saved": bool(existing.is_saved),
+        "is_hidden": bool(existing.is_hidden),
+        "updated_at": existing.updated_at.isoformat() if existing.updated_at else None,
+    }
+
+
 @router.get("/saved")
 async def get_saved_articles(
     profile_id: str = Query(default="default"),

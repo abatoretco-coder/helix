@@ -57,7 +57,6 @@ def _parse_pg_array(value: str) -> list[str]:
 
 
 def _build_markdown(row: dict[str, str]) -> str:
-    period = row.get("period", "daily") or "daily"
     period_date = _normalize_date(row.get("period_date", ""))
     category = row.get("category", "all") or "all"
     generated_at = row.get("generated_at", "") or ""

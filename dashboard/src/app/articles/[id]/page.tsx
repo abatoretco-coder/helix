@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
-import { Article } from "@/types";
+import { Article, SimilarArticle } from "@/types";
 import { LoadingSpinner, ErrorMessage } from "@/components/ArticleCard";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -13,14 +13,29 @@ export default function ArticleDetailPage() {
   const articleId = parseInt(params.id as string);
 
   const [article, setArticle] = useState<Article | null>(null);
+  const [similarArticles, setSimilarArticles] = useState<SimilarArticle[]>([]);
+  const [userState, setUserState] = useState({ is_read: false, is_saved: false, is_hidden: false });
+  const [stateBusy, setStateBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await api.getArticle(articleId);
+        const [data, similar] = await Promise.all([
+          api.getArticle(articleId),
+          api.getSimilarArticles(articleId).catch(() => ({ items: [] })),
+        ]);
         setArticle(data);
+        setSimilarArticles(similar.items || []);
+        const state = await api.getArticleUserState(articleId).catch(() => null);
+        if (state) {
+          setUserState({
+            is_read: Boolean(state.is_read),
+            is_saved: Boolean(state.is_saved),
+            is_hidden: Boolean(state.is_hidden),
+          });
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load article");
       } finally {
@@ -30,6 +45,19 @@ export default function ArticleDetailPage() {
 
     load();
   }, [articleId]);
+
+  const updateUserState = async (next: Partial<typeof userState>) => {
+    try {
+      setStateBusy(true);
+      const merged = { ...userState, ...next };
+      await api.setArticleUserState(articleId, merged);
+      setUserState(merged);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update article state");
+    } finally {
+      setStateBusy(false);
+    }
+  };
 
   if (loading) return <LoadingSpinner />;
   if (error) return <ErrorMessage error={error} />;
@@ -108,9 +136,39 @@ export default function ArticleDetailPage() {
 
       <div className="article-actions">
         <a href={article.url} target="_blank" rel="noopener noreferrer" className="btn-primary">
-          Read Full Article →
+          Read Full Article -&gt;
         </a>
+        <button onClick={() => updateUserState({ is_read: !userState.is_read })} disabled={stateBusy}>
+          {userState.is_read ? "Mark unread" : "Mark read"}
+        </button>
+        <button onClick={() => updateUserState({ is_saved: !userState.is_saved })} disabled={stateBusy}>
+          {userState.is_saved ? "Unsave" : "Save"}
+        </button>
+        <button onClick={() => updateUserState({ is_hidden: !userState.is_hidden })} disabled={stateBusy}>
+          {userState.is_hidden ? "Unhide" : "Hide"}
+        </button>
       </div>
+
+      {similarArticles.length > 0 && (
+        <section className="similar-section">
+          <h2>Similar Articles</h2>
+          <div className="similar-list">
+            {similarArticles.map((item) => (
+              <article key={item.id} className="similar-item">
+                <div>
+                  <h3>
+                    <a href={item.url} target="_blank" rel="noopener noreferrer">
+                      {item.title || "Untitled"}
+                    </a>
+                  </h3>
+                  <p>{item.summary_short || item.source || "No summary available"}</p>
+                </div>
+                <span>{Math.round(item.similarity * 100)}%</span>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       <style jsx>{`
         .article-detail {
@@ -273,6 +331,58 @@ export default function ArticleDetailPage() {
           margin-top: 2rem;
         }
 
+        .similar-section {
+          margin-top: 2rem;
+          border-top: 1px solid #eee;
+          padding-top: 1.5rem;
+        }
+
+        .similar-section h2 {
+          font-size: 1.2rem;
+          margin: 0 0 1rem;
+        }
+
+        .similar-list {
+          display: grid;
+          gap: 0.75rem;
+        }
+
+        .similar-item {
+          display: grid;
+          grid-template-columns: 1fr auto;
+          gap: 1rem;
+          border: 1px solid #eee;
+          border-radius: 8px;
+          padding: 0.85rem;
+          align-items: start;
+        }
+
+        .similar-item h3 {
+          margin: 0 0 0.35rem;
+          font-size: 1rem;
+        }
+
+        .similar-item a {
+          color: #0066cc;
+          text-decoration: none;
+        }
+
+        .similar-item p {
+          margin: 0;
+          color: #666;
+          line-height: 1.5;
+        }
+
+        .similar-item span {
+          background: #e6f2ff;
+          color: #0066cc;
+          border-radius: 999px;
+          padding: 0.25rem 0.6rem;
+          font-weight: 700;
+          font-size: 0.85rem;
+        }
+
+        .article-actions button,
         .btn-primary {
           background: #0066cc;
           color: white;
@@ -282,10 +392,18 @@ export default function ArticleDetailPage() {
           font-weight: 600;
           display: inline-block;
           transition: background 0.2s;
+          border: 0;
+          cursor: pointer;
         }
 
+        .article-actions button:hover:not(:disabled),
         .btn-primary:hover {
           background: #0052a3;
+        }
+
+        .article-actions button:disabled {
+          background: #ccc;
+          cursor: not-allowed;
         }
 
         .not-found {

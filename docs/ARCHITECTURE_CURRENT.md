@@ -15,6 +15,7 @@
 - worker_ai
 - worker_cluster
 - worker_briefing
+- worker_cleanup
 - dashboard
 - prometheus
 
@@ -35,6 +36,8 @@ sources.yaml / DB sources
 → queue:briefing
 → worker_briefing
 → briefings (and embedded daily scheduler trigger)
+→ worker_cleanup
+→ retention_jobs + old-log/raw-item cleanup
 → API / Dashboard / Jarvis
 
 ## Queues
@@ -58,6 +61,15 @@ sources.yaml / DB sources
 - article_clusters
 - briefings
 - processing_logs
+- article_user_state
+- watchlist_entities
+- entity_mentions
+- research_projects
+- project_articles
+- notification_channels
+- alert_rules
+- export_jobs
+- retention_jobs
 
 ## Main endpoints
 

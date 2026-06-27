@@ -1,5 +1,3 @@
-from datetime import datetime
-from typing import Optional
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
@@ -7,13 +5,12 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     Column,
+    Date,
     DateTime,
-    Float,
     ForeignKey,
     Index,
     Integer,
     Numeric,
-    String,
     Text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
@@ -64,6 +61,7 @@ class RawItem(Base):
     status          = Column(Text, default="new")
     error_message   = Column(Text)
     retry_count     = Column(Integer, default=0)
+    next_retry_at   = Column(DateTime)
     created_at      = Column(DateTime, server_default=func.now())
     updated_at      = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
@@ -165,7 +163,7 @@ class Briefing(Base):
 
     id           = Column(BigInteger, primary_key=True)
     period       = Column(Text, nullable=False)
-    period_date  = Column(DateTime, nullable=False)
+    period_date  = Column(Date, nullable=False)
     category     = Column(Text, default="all")
     content      = Column(Text)
     article_ids  = Column(ARRAY(BigInteger))
@@ -304,6 +302,8 @@ class RetentionJob(Base):
 Index("ix_article_user_state_profile_article", ArticleUserState.profile_id, ArticleUserState.article_id, unique=True)
 Index("ix_watchlist_entities_name", WatchlistEntity.name)
 Index("ix_entity_mentions_article", EntityMention.article_id)
+Index("ix_entity_mentions_watchlist_entity", EntityMention.watchlist_entity_id)
+Index("ix_entity_mentions_article_watchlist_entity", EntityMention.article_id, EntityMention.watchlist_entity_id, unique=True)
 Index("ix_research_projects_slug", ResearchProject.slug, unique=True)
 Index("ix_project_articles_project_article", ProjectArticle.project_id, ProjectArticle.article_id, unique=True)
 Index("ix_alert_rules_event_type", AlertRule.event_type)

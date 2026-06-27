@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { Article } from "@/types";
-import { ArticleCard, LoadingSpinner, ErrorMessage, SearchBox } from "@/components/ArticleCard";
+import { ArticleCard, LoadingSpinner, ErrorMessage } from "@/components/ArticleCard";
 
 export default function ArticlesPage() {
   const [articles, setArticles] = useState<Article[]>([]);
@@ -11,7 +11,7 @@ export default function ArticlesPage() {
   const [error, setError] = useState("");
   const [offset, setOffset] = useState(0);
 
-  const loadArticles = async () => {
+  const loadArticles = useCallback(async () => {
     try {
       setLoading(true);
       const data = await api.getArticles(50, offset);
@@ -25,11 +25,11 @@ export default function ArticlesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [offset]);
 
   useEffect(() => {
     loadArticles();
-  }, [offset]);
+  }, [loadArticles]);
 
   return (
     <div className="articles-page">

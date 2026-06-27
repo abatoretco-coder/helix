@@ -11,8 +11,10 @@ import {
   PipelineQueuesResponse,
   PipelineStatus,
   ProjectItem,
+  SimilarArticlesResponse,
   Source,
   SourceHealthResponse,
+  SourceRecommendationsResponse,
   UserStateUpdate,
   WatchlistEntity,
 } from "@/types";
@@ -48,9 +50,15 @@ export const api = {
   getArticle: (id: number) =>
     fetchAPI<Article>(`/articles/${id}`),
 
+  getSimilarArticles: (id: number, limit = 8) =>
+    fetchAPI<SimilarArticlesResponse>(`/v1/articles/${id}/similar?limit=${limit}`),
+
   // Search
   search: (q: string, limit = 20) =>
     fetchAPI<any>(`/search?q=${encodeURIComponent(q)}&limit=${limit}`),
+
+  semanticSearch: (q: string, limit = 20) =>
+    fetchAPI<any>(`/v1/search/semantic?q=${encodeURIComponent(q)}&limit=${limit}`),
 
   // Clusters
   getClusters: (limit = 30, offset = 0) =>
@@ -80,8 +88,11 @@ export const api = {
   getSources: () =>
     fetchAPI<Source[]>(`/sources`),
 
-  getSourceHealth: () =>
-    fetchAPI<SourceHealthResponse>(`/v1/sources/health`),
+  getSourceHealth: (limit = 500) =>
+    fetchAPI<SourceHealthResponse>(`/v1/sources/health?limit=${limit}`),
+
+  getSourceRecommendations: (limit = 50) =>
+    fetchAPI<SourceRecommendationsResponse>(`/v1/sources/recommendations?limit=${limit}`),
 
   enableSource: (id: number) =>
     fetchAPI<Source>(`/v1/sources/${id}/enable`, { method: "POST" }),
@@ -94,6 +105,9 @@ export const api = {
 
   resetSourceErrors: (id: number) =>
     fetchAPI<Source>(`/v1/sources/${id}/reset-errors`, { method: "POST" }),
+
+  updateSource: (id: number, payload: Partial<Pick<Source, "priority" | "category" | "enabled">> & { refresh_minutes?: number }) =>
+    fetchAPI<Source>(`/v1/sources/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
 
   // Pipeline
   getPipelineStatus: () =>
@@ -141,6 +155,11 @@ export const api = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+
+  getArticleUserState: (articleId: number, profileId = "default") =>
+    fetchAPI<UserStateUpdate & { article_id: number; updated_at?: string | null }>(
+      `/v1/user-state/articles/${articleId}?profile_id=${encodeURIComponent(profileId)}`,
+    ),
 
   getSavedArticles: (profileId = "default", limit = 50) =>
     fetchAPI<{ profile_id: string; count: number; items: any[] }>(

@@ -13,6 +13,13 @@ python -m compileall services/worker/app
 echo "[dev-check] compiling api python files"
 python -m compileall services/api/app
 
+if python -m ruff --version >/dev/null 2>&1; then
+  echo "[dev-check] checking Python dead code/imports with ruff"
+  python -m ruff check services scripts --select F401,F841,F821,F823,F811,F632
+else
+  echo "[dev-check][warn] ruff not installed; skipping Python dead-code/import checks"
+fi
+
 echo "[dev-check] validating source registry"
 python scripts/validate_sources.py --strict
 
@@ -23,6 +30,11 @@ if command -v npm >/dev/null 2>&1; then
   else
     echo "[dev-check][warn] dashboard lint script not found; skipping"
   fi
+fi
+
+if [ "${STATIC_ONLY:-false}" = "true" ]; then
+  echo "[dev-check] static checks passed; skipping runtime smoke test because STATIC_ONLY=true"
+  exit 0
 fi
 
 echo "[dev-check] checking running containers"

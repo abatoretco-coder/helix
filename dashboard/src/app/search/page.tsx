@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useCallback, useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { SearchBox, LoadingSpinner, ErrorMessage } from "@/components/ArticleCard";
@@ -13,8 +13,9 @@ function SearchContent() {
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [mode, setMode] = useState<"keyword" | "semantic">("keyword");
 
-  const handleSearch = async (q: string) => {
+  const handleSearch = useCallback(async (q: string, searchMode = mode) => {
     if (!q.trim()) return;
 
     setQuery(q);
@@ -22,33 +23,54 @@ function SearchContent() {
     setError("");
 
     try {
-      const data = await api.search(q, 50);
+      const data = searchMode === "semantic"
+        ? await api.semanticSearch(q, 50)
+        : await api.search(q, 50);
       setResults(data.hits || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Search failed");
     } finally {
       setLoading(false);
     }
-  };
+  }, [mode]);
 
   useEffect(() => {
     if (initialQ) {
       handleSearch(initialQ);
     }
-  }, [initialQ]);
+  }, [handleSearch, initialQ]);
 
   return (
     <div className="search-page">
       <h1>🔍 Search</h1>
 
-      <SearchBox onSearch={handleSearch} loading={loading} />
+      <div className="search-controls">
+        <SearchBox onSearch={handleSearch} loading={loading} />
+        <div className="mode-toggle" aria-label="Search mode">
+          {(["keyword", "semantic"] as const).map((item) => (
+            <button
+              key={item}
+              type="button"
+              className={mode === item ? "active" : ""}
+              onClick={() => {
+                setMode(item);
+                if (query) {
+                  handleSearch(query, item);
+                }
+              }}
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {error && <ErrorMessage error={error} />}
 
       {results.length > 0 && (
         <div className="results">
           <p className="result-count">
-            Found {results.length} results for "<strong>{query}</strong>"
+            Found {results.length} results for &quot;<strong>{query}</strong>&quot;
           </p>
 
           <div className="results-list">
@@ -76,7 +98,7 @@ function SearchContent() {
       {loading && <LoadingSpinner />}
 
       {!loading && query && results.length === 0 && !error && (
-        <div className="no-results">No articles found for "{query}"</div>
+        <div className="no-results">No articles found for &quot;{query}&quot;</div>
       )}
 
       <style jsx>{`
@@ -91,10 +113,37 @@ function SearchContent() {
           margin-bottom: 2rem;
         }
 
+        .search-controls {
+          display: grid;
+          gap: 0.75rem;
+          margin-bottom: 2rem;
+        }
+
         .search-box {
           display: flex;
           gap: 0.5rem;
-          margin-bottom: 2rem;
+        }
+
+        .mode-toggle {
+          display: inline-flex;
+          width: fit-content;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          overflow: hidden;
+        }
+
+        .mode-toggle button {
+          border: 0;
+          border-radius: 0;
+          background: #fff;
+          color: #333;
+          padding: 0.45rem 0.75rem;
+          text-transform: capitalize;
+        }
+
+        .mode-toggle button.active {
+          background: #0066cc;
+          color: #fff;
         }
 
         input {

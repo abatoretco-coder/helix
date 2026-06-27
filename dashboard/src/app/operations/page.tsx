@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { Capabilities, DeadQueueDetail, DeadQueueOverview, OpsSummary } from "@/types";
 import { ErrorMessage, LoadingSpinner } from "@/components/ArticleCard";
@@ -37,7 +37,7 @@ export default function OperationsPage() {
   const [error, setError] = useState("");
   const [queueAction, setQueueAction] = useState<Record<string, string>>({});
 
-  const load = async (silent = false) => {
+  const load = useCallback(async (silent = false) => {
     if (silent) setRefreshing(true);
     else setLoading(true);
     try {
@@ -52,11 +52,11 @@ export default function OperationsPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   const loadDeadQueue = async (queue: PipelineQueueName) => {
     setQueueAction((prev) => ({ ...prev, [queue]: "load" }));
@@ -112,8 +112,8 @@ export default function OperationsPage() {
     }
   };
 
-  const queueDepths = summary?.status.pipeline.queue_depths ?? {};
-  const deadCounts = deadOverview?.queues ?? {};
+  const queueDepths = useMemo(() => summary?.status.pipeline.queue_depths ?? {}, [summary]);
+  const deadCounts = useMemo(() => deadOverview?.queues ?? {}, [deadOverview]);
 
   const totalDead = useMemo(
     () => Object.values(deadCounts).reduce((sum, count) => sum + (count || 0), 0),

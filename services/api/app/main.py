@@ -7,6 +7,7 @@ from app.db.session import init_db
 from app.observability import PrometheusMiddleware, router as observability_router
 from app.routes import (
     alerts,
+    agent,
     articles,
     briefings,
     capabilities,
@@ -64,6 +65,7 @@ app.include_router(projects.router, prefix="/projects", tags=["projects"])
 app.include_router(inbox.router, prefix="/inbox", tags=["inbox"])
 app.include_router(home_assistant.router, prefix="/home-assistant", tags=["home-assistant"])
 app.include_router(alerts.router, prefix="/alerts", tags=["alerts"])
+app.include_router(agent.router, prefix="/agent", tags=["agent"])
 app.include_router(user_state.router, prefix="/user-state", tags=["user-state"])
 app.include_router(contract.router, prefix="/contract", tags=["contract"])
 
@@ -84,5 +86,6 @@ app.include_router(projects.router, prefix="/v1/projects", tags=["projects-v1"],
 app.include_router(inbox.router, prefix="/v1/inbox", tags=["inbox-v1"], dependencies=[Depends(require_api_token)])
 app.include_router(home_assistant.router, prefix="/v1/home-assistant", tags=["home-assistant-v1"], dependencies=[Depends(require_api_token)])
 app.include_router(alerts.router, prefix="/v1/alerts", tags=["alerts-v1"], dependencies=[Depends(require_api_token)])
+app.include_router(agent.router, prefix="/v1/agent", tags=["agent-v1"], dependencies=[Depends(require_api_token)])
 app.include_router(user_state.router, prefix="/v1/user-state", tags=["user-state-v1"], dependencies=[Depends(require_api_token)])
 app.include_router(contract.router, prefix="/v1/contract", tags=["contract-v1"], dependencies=[Depends(require_api_token)])

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { ProjectItem } from "@/types";
 
@@ -11,23 +11,21 @@ export default function ProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const loadProjects = async () => {
+  const loadProjects = useCallback(async () => {
     try {
       setLoading(true);
       const data = await api.getProjects();
       setProjects(data.items || []);
-      if (!selected && data.items?.length) {
-        setSelected(data.items[0].slug);
-      }
+      setSelected((current) => current || data.items?.[0]?.slug || "");
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load projects");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const loadProjectArticles = async (slug: string) => {
+  const loadProjectArticles = useCallback(async (slug: string) => {
     try {
       const data = await api.getProjectArticles(slug, 40);
       setArticles(data.items || []);
@@ -35,17 +33,17 @@ export default function ProjectsPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load project articles");
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadProjects();
-  }, []);
+  }, [loadProjects]);
 
   useEffect(() => {
     if (selected) {
       loadProjectArticles(selected);
     }
-  }, [selected]);
+  }, [loadProjectArticles, selected]);
 
   return (
     <div className="page">

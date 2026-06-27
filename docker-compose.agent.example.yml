@@ -1,0 +1,14 @@
+services:
+  jarvis_agent_example:
+    build:
+      context: .
+      dockerfile: docker/jarvis-agent.example.Dockerfile
+    container_name: helix_jarvis_agent_example
+    profiles: ["agent"]
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      HELIX_API_URL: http://api:8000
+      HELIX_API_TOKEN: ${HELIX_API_TOKEN:-}
+    restart: "no"

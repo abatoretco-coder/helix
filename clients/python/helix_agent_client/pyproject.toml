@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "helix-agent-client"
+version = "0.1.0"
+description = "Small Python client for the Helix v1 agent API."
+requires-python = ">=3.10"
+readme = "README.md"
+authors = [{ name = "Helix" }]
+
+[tool.setuptools.packages.find]
+where = ["."]

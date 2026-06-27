@@ -142,13 +142,14 @@ sources:
 
 ## 🔄 Workers
 
-**Five async workers** consume Redis queues:
+**Six async workers** handle collection, enrichment, briefing, and retention:
 
 1. **collect** — reads sources, calls collectors (RSS, Reddit, GitHub, etc.), inserts raw items
 2. **extract** — fetches URLs, extracts full text via morss → trafilatura → news-please → newspaper4k → playwright
 3. **ai** — summarizes, classifies, extracts entities, generates embeddings, scores articles
 4. **cluster** — consumes `queue:cluster` and groups semantically similar articles
 5. **briefing** — consumes `queue:briefing`, generates daily markdown briefings, and runs the embedded daily scheduler trigger (no dedicated scheduler container)
+6. **cleanup** — runs periodic retention tasks for old processing logs and stale failed/duplicate raw items
 
 Watch logs:
 ```bash
@@ -157,11 +158,24 @@ docker compose logs -f worker_extract
 docker compose logs -f worker_ai
 docker compose logs -f worker_cluster
 docker compose logs -f worker_briefing
+docker compose logs -f worker_cleanup
 ```
 
 Dev validation:
 ```bash
 ./scripts/dev_check.sh
+```
+
+Static-only validation without running containers:
+
+```bash
+STATIC_ONLY=true ./scripts/dev_check.sh
+```
+
+On Windows/PowerShell:
+
+```powershell
+.\scripts\dev_check.ps1 -StaticOnly
 ```
 
 ---
@@ -175,8 +189,14 @@ curl http://192.168.1.50:8000/health
 # Get articles
 curl http://192.168.1.50:8000/articles?limit=10
 
+# Get semantically similar articles
+curl http://192.168.1.50:8000/articles/123/similar?limit=10
+
 # Search
 curl http://192.168.1.50:8000/search?q=artificial+intelligence&limit=20
+
+# Semantic search via pgvector/Ollama embeddings
+curl http://192.168.1.50:8000/search/semantic?q=artificial+intelligence&limit=20
 
 # Get clusters (same event, multiple sources)
 curl http://192.168.1.50:8000/clusters
@@ -195,11 +215,19 @@ Full OpenAPI docs: http://192.168.1.50:8000/docs
 ### v1 Contract (Jarvis / service-to-service)
 
 - `GET /v1/health`
+- `GET /v1/agent/capabilities`
+- `GET /v1/agent/context`
+- `POST /v1/agent/memories`
+- `POST /v1/agent/tasks`
+- `POST /v1/agent/tasks/claim`
 - `POST /v1/jarvis/query`
+- `GET /v1/articles/{article_id}/similar`
 - `GET /v1/search?q=...`
+- `GET /v1/search/semantic?q=...`
 - `GET /v1/briefings/daily`
 - `GET /v1/pipeline/metrics`
 - `GET /v1/pipeline/sources-status`
+- `GET /v1/sources/recommendations`
 - `GET /v1/queues/dead`
 - `GET /v1/ops/summary`
 
@@ -216,6 +244,14 @@ NEXT_PUBLIC_HELIX_API_TOKEN=<HELIX_API_TOKEN>
 ```
 
 LAN note: this is acceptable for local NAS-only usage. Do not expose a public dashboard with this token in browser-delivered env vars. For external exposure, add server-side auth.
+
+Optional dashboard Basic Auth can be enabled with:
+
+```bash
+DASHBOARD_BASIC_AUTH_ENABLED=true
+DASHBOARD_BASIC_AUTH_USER=helix
+DASHBOARD_BASIC_AUTH_PASSWORD=<strong-password>
+```
 
 Additional NAS intelligence endpoints:
 
@@ -235,15 +271,17 @@ Additional NAS intelligence endpoints:
 
 ## 🎯 Features
 
-- ✅ **35+ RSS sources** preconfigured (tech, AI, supply chain, pharma, geopolitics)
-- ✅ **Multi-language** (FR/EN) — Google News RSS auto-queries
+- ✅ **275 curated sources** preconfigured, including 79 French-language sources
+- ✅ **Multi-language** (FR/EN + international) — direct feeds and Google News RSS auto-queries
 - ✅ **Full-text extraction** — 6-layer fallback chain for high success rate
 - ✅ **Local LLM** — Ollama: summaries, classification, entity extraction, embeddings
 - ✅ **Semantic search** — pgvector + IVF index for fast similarity
+- ✅ **Similar articles** — article-to-article recommendations from embeddings
 - ✅ **Event clustering** — auto-groups articles about the same event
 - ✅ **Personal scoring** — rank articles by your interests
 - ✅ **Daily briefings** — automated newsletter generation
 - ✅ **Jarvis integration** — answer natural language questions
+- ✅ **Agent API** — structured context and durable memory writeback for external agents
 - ✅ **Versioned API contract** — `/v1/*` endpoints for Jarvis and other clients
 - ✅ **Operational visibility** — pipeline metrics and source status endpoints
 - ✅ **All data local** — nothing leaves your NAS
@@ -253,14 +291,23 @@ Additional NAS intelligence endpoints:
 ## 📦 Importing More Sources
 
 ```bash
+# Append the curated French-first enrichment pack
+python scripts/enrich_sources.py --dry-run
+python scripts/enrich_sources.py
+
 # Clone awesome-rss-feeds and parse OPML files
 python scripts/import_awesome_feeds.py --output config/sources.yaml --limit 500
+
+# Validate source shape and duplicates
+python scripts/validate_sources.py --strict
 ```
 
 Then restart `worker_collect`:
 ```bash
 docker compose restart worker_collect
 ```
+
+See [Source enrichment](docs/SOURCE_ENRICHMENT.md) for coverage details and database sync notes.
 
 ---
 
@@ -367,6 +414,8 @@ du -sh data/*
 
 ## 📚 Further Reading
 
+- [Repository analysis and applied roadmap](docs/REPOSITORY_ANALYSIS_AND_ROADMAP.md)
+- [Agent API architecture](docs/AGENT_API_ARCHITECTURE.md)
 - [Trafilatura](https://trafilatura.readthedocs.io) — extraction
 - [Ollama](https://ollama.ai) — local LLM
 - [Meilisearch](https://meilisearch.com/docs) — search

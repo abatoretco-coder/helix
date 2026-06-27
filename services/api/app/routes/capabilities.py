@@ -25,4 +25,6 @@ async def get_capabilities():
         "read_state_supported": True,
         "db_watchlist_supported": True,
         "db_projects_supported": True,
+        "agent_api": True,
+        "agent_memory_supported": True,
     }

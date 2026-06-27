@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { InboxResponse } from "@/types";
 
@@ -14,7 +14,7 @@ export default function InboxPage() {
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState<number | null>(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       setLoading(true);
       const res = await api.getInbox({ mode, limit: 60, hide_read: hideRead });
@@ -25,11 +25,11 @@ export default function InboxPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [hideRead, mode]);
 
   useEffect(() => {
     load();
-  }, [mode, hideRead]);
+  }, [load]);
 
   const updateState = async (
     articleId: number,

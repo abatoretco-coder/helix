@@ -10,7 +10,7 @@ from typing import Optional
 from sqlalchemy import create_engine, select, update
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.db.models import Base, RawItem, Article, Source, ProcessingLog
+from app.db.models import RawItem, Source, ProcessingLog
 
 # Workers use sync engine (workers are simple loops, no need for asyncio)
 _engine = create_engine(

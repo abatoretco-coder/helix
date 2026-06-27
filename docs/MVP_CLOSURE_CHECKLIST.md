@@ -8,6 +8,7 @@
 - [ ] worker_ai depends on ollama
 - [ ] worker_cluster service is enabled
 - [ ] worker_briefing service is enabled
+- [ ] worker_cleanup service is enabled
 - [ ] daily scheduler is embedded in worker_briefing
 
 ## Pipeline behavior
@@ -17,6 +18,7 @@
 - [ ] ai enqueues queue:cluster after DB commit
 - [ ] cluster writes clusters and article_clusters
 - [ ] briefing consumes queue:briefing and upserts daily briefings
+- [ ] cleanup periodically deletes old processing logs and stale failed/duplicate raw items
 - [ ] briefing payload parser falls back to current date when date is missing/invalid
 - [ ] cluster worker explicitly checks ai.embedding is None
 
@@ -24,6 +26,7 @@
 
 - [ ] scripts/smoke_test.sh passes
 - [ ] scripts/dev_check.sh passes
+- [ ] scripts/dev_check.ps1 -StaticOnly passes on Windows development hosts
 - [ ] GET /health and GET /v1/health return 200
 - [ ] GET /sources returns 200
 - [ ] GET /articles returns 200

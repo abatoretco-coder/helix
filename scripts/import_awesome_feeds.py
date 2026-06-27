@@ -16,11 +16,9 @@ We filter by categories of interest and append to sources.yaml.
 from __future__ import annotations
 
 import argparse
-import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
 from xml.etree import ElementTree
 
 import yaml

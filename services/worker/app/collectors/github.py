@@ -1,8 +1,7 @@
 """GitHub trending collector via unofficial scraping + GitHub search API."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import datetime
 
 import requests
 

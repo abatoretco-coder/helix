@@ -8,9 +8,10 @@
 - [x] Fix briefing date fallback
 - [x] Fix cluster embedding check
 - [x] Add MVP closure checklist
-- [ ] Run full local smoke test
+- [ ] Run full local smoke test against running containers
 - [x] Add source health endpoint
 - [x] Add pipeline status endpoint
+- [x] Plan Next.js upgrade path for current npm audit advisories
 
 ## P1 — Source coverage
 
@@ -25,7 +26,7 @@
 - [x] Add source health dashboard
 - [x] Add Obsidian export
 - [x] Add backup_all.sh
-- [ ] Add cleanup worker
+- [x] Add cleanup worker
 
 ## P2 — AI quality
 
