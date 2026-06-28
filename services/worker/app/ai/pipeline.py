@@ -21,6 +21,7 @@ from app.utils.logging import get_logger
 log = get_logger("ai")
 
 LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "openai").strip().lower()
+BACKGROUND_AI_ENABLED = os.environ.get("BACKGROUND_AI_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "").strip()
 OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").strip().rstrip("/")
 LLM_MODEL = os.environ.get("OPENAI_MODEL", os.environ.get("LLM_MODEL", "gpt-4.1-mini")).strip()
@@ -71,6 +72,9 @@ def _extract_openai_text(payload: dict) -> str:
 
 def _llm_generate(prompt: str, model: str = LLM_MODEL) -> str:
     try:
+        if not BACKGROUND_AI_ENABLED:
+            log.info("background_llm_skipped")
+            return ""
         if LLM_PROVIDER != "openai":
             log.warning("unsupported_llm_provider", provider=LLM_PROVIDER)
             return ""
@@ -95,6 +99,9 @@ def _llm_generate(prompt: str, model: str = LLM_MODEL) -> str:
 
 def _embed_text(text: str, model: str = EMBED_MODEL) -> Optional[list[float]]:
     try:
+        if not BACKGROUND_AI_ENABLED:
+            log.info("background_embedding_skipped")
+            return None
         if LLM_PROVIDER != "openai":
             log.warning("unsupported_embedding_provider", provider=LLM_PROVIDER)
             return None

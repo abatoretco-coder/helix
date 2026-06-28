@@ -147,6 +147,7 @@ services:
       HOME_ASSISTANT_WEBHOOK_URL: ${HOME_ASSISTANT_WEBHOOK_URL:-}
       HOME_ASSISTANT_WEBHOOK_TOKEN: ${HOME_ASSISTANT_WEBHOOK_TOKEN:-}
       LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      BACKGROUND_AI_ENABLED: ${BACKGROUND_AI_ENABLED:-false}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
@@ -239,6 +240,7 @@ services:
       DATABASE_URL: postgresql+asyncpg://news:${POSTGRES_PASSWORD}@postgres:5432/newsdb
       REDIS_URL: redis://redis:6379/0
       LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      BACKGROUND_AI_ENABLED: ${BACKGROUND_AI_ENABLED:-false}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
@@ -272,6 +274,7 @@ services:
       DATABASE_URL: postgresql+asyncpg://news:${POSTGRES_PASSWORD}@postgres:5432/newsdb
       REDIS_URL: redis://redis:6379/0
       LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      BACKGROUND_AI_ENABLED: ${BACKGROUND_AI_ENABLED:-false}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
@@ -302,6 +305,7 @@ services:
       DATABASE_URL: postgresql+asyncpg://news:${POSTGRES_PASSWORD}@postgres:5432/newsdb
       REDIS_URL: redis://redis:6379/0
       LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      BACKGROUND_AI_ENABLED: ${BACKGROUND_AI_ENABLED:-false}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}

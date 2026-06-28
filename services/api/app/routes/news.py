@@ -6,7 +6,7 @@ from typing import Any
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import desc, func, select
+from sqlalchemy import case, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Article, ArticleAI, Source
@@ -120,8 +120,25 @@ def _dedupe_items(items: list[dict[str, Any]], limit: int) -> list[dict[str, Any
     return out
 
 
+def _parse_iso_datetime(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+    except ValueError:
+        return None
+
+
 async def _recent_news_rows(db: AsyncSession, fetch_limit: int) -> list[dict[str, Any]]:
-    article_date = func.coalesce(Article.published_at, Article.discovered_at, Article.extracted_at).label("article_date")
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    article_date = case(
+        (
+            Article.published_at > now,
+            func.coalesce(Article.discovered_at, Article.extracted_at, Article.published_at),
+        ),
+        else_=func.coalesce(Article.published_at, Article.discovered_at, Article.extracted_at),
+    ).label("article_date")
     rows = (
         await db.execute(
             select(
@@ -179,10 +196,22 @@ async def list_news_items(
         if _matches_geo(row, geoFilter, tab) and _matches_sector(row, sector_list)
     ]
     selected = _dedupe_items(filtered if filtered else rows, limit)
+    selected_dates = [
+        parsed
+        for row in selected
+        for parsed in [_parse_iso_datetime(str(row.get("publishedAt") or ""))]
+        if parsed is not None
+    ]
     return {
         "status": "ok",
         "source": "helix",
         "generatedAt": datetime.now(timezone.utc).isoformat(),
+        "freshness": {
+            "candidateCount": len(filtered),
+            "selectedCount": len(selected),
+            "newestItemAt": max(selected_dates).isoformat() if selected_dates else None,
+            "oldestItemAt": min(selected_dates).isoformat() if selected_dates else None,
+        },
         "items": [
             {
                 "title": row["title"],
