@@ -300,8 +300,9 @@ async def ops_summary(db: AsyncSession = Depends(get_db)):
         "recent_errors": errors,
         "source_health_summary": source_summary,
         "configured_models": {
-            "llm_model": os.environ.get("LLM_MODEL", "mistral"),
-            "embedding_model": os.environ.get("EMBEDDING_MODEL", os.environ.get("EMBED_MODEL", "nomic-embed-text")),
+            "llm_provider": os.environ.get("LLM_PROVIDER", "openai"),
+            "llm_model": os.environ.get("OPENAI_MODEL", os.environ.get("LLM_MODEL", "gpt-4.1-mini")),
+            "embedding_model": os.environ.get("OPENAI_EMBEDDING_MODEL", os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")),
         },
         "low_power_mode": os.environ.get("LOW_POWER_MODE", "false").strip().lower() in {"1", "true", "yes", "on"},
         "backup": {

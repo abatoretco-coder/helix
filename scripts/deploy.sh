@@ -1,6 +1,6 @@
 #!/bin/bash
 # ─────────────────────────────────────────────────────────────────────────────
-# News NAS — bootstrap + deploy on NAS (192.168.1.50)
+# Helix — bootstrap + deploy on NAS (192.168.1.50)
 #
 # Run once on the NAS:
 #   chmod +x scripts/deploy.sh && ./scripts/deploy.sh
@@ -17,7 +17,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 echo "╔══════════════════════════════════════════════════════╗"
-echo "║        News NAS — Deploy on ${NAS_IP}              ║"
+echo "║        Helix — Deploy on ${NAS_IP}              ║"
 echo "╚══════════════════════════════════════════════════════╝"
 cd "$PROJECT_DIR"
 
@@ -83,7 +83,7 @@ docker compose up -d
 
 echo ""
 echo "╔══════════════════════════════════════════════════════╗"
-echo "║  News NAS is running!                                ║"
+echo "║  Helix is running!                                ║"
 echo "║                                                      ║"
 echo "║  Dashboard   → http://${NAS_IP}:${DASHBOARD_PORT}              ║"
 echo "║  API         → http://${NAS_IP}:8000/docs          ║"

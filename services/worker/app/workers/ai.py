@@ -23,7 +23,7 @@ from app.utils.logging import get_logger, setup_logging
 
 log = get_logger("worker.ai")
 
-LLM_MODEL = os.environ.get("LLM_MODEL", "mistral")
+LLM_MODEL = os.environ.get("OPENAI_MODEL", os.environ.get("LLM_MODEL", "gpt-4.1-mini"))
 AI_MAX_RETRIES = int(os.environ.get("AI_MAX_RETRIES", "3"))
 LOW_POWER_MODE = os.environ.get("LOW_POWER_MODE", "false").lower() in {"1", "true", "yes", "on"}
 WORKER_RATE_LIMIT_MS = int(os.environ.get("AI_WORKER_RATE_LIMIT_MS", os.environ.get("WORKER_RATE_LIMIT_MS", "0")))

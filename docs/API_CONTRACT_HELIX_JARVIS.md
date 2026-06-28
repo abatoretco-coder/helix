@@ -30,7 +30,7 @@ Version cible: v1 (implemented)
 
 ### 3.1 Health
 GET /v1/health
-- 200: {"status":"ok","service":"news-nas-api"}
+- 200: {"status":"ok","service":"helix-api"}
 
 ### 3.2 Query conversationnelle
 POST /v1/jarvis/query

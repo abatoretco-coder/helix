@@ -6,4 +6,4 @@ router = APIRouter()
 
 @router.get("/health", tags=["health"])
 async def health():
-    return JSONResponse({"status": "ok", "service": "news-nas-api"})
+    return JSONResponse({"status": "ok", "service": "helix-api"})

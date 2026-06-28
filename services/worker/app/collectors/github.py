@@ -12,7 +12,7 @@ log = get_logger("collector.github")
 _SEARCH_URL = "https://api.github.com/search/repositories"
 _HEADERS = {
     "Accept": "application/vnd.github+json",
-    "User-Agent": "NewsNAS/1.0",
+    "User-Agent": "Helix/1.0",
 }
 
 

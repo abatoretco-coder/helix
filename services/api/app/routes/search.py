@@ -12,8 +12,11 @@ router = APIRouter()
 
 MEILI_URL = os.environ.get("MEILI_URL", "http://meilisearch:7700")
 MEILI_KEY  = os.environ.get("MEILI_MASTER_KEY", "")
-OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://ollama:11434")
-EMBED_MODEL = os.environ.get("EMBEDDING_MODEL", os.environ.get("EMBED_MODEL", "nomic-embed-text"))
+LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "openai").strip().lower()
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "").strip()
+OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").strip().rstrip("/")
+EMBED_MODEL = os.environ.get("OPENAI_EMBEDDING_MODEL", os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")).strip()
+EMBED_DIMENSIONS = int(os.environ.get("EMBEDDING_DIMENSIONS", "768"))
 
 
 @router.get("/")
@@ -66,15 +69,22 @@ async def semantic_search_articles(
     limit: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ):
+    if LLM_PROVIDER != "openai" or not OPENAI_API_KEY:
+        raise HTTPException(503, "Embedding API is not configured")
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.post(
-            f"{OLLAMA_URL}/api/embeddings",
-            json={"model": EMBED_MODEL, "prompt": q},
+            f"{OPENAI_BASE_URL}/embeddings",
+            headers={
+                "Authorization": f"Bearer {OPENAI_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={"model": EMBED_MODEL, "input": q, "dimensions": EMBED_DIMENSIONS},
         )
     if resp.status_code != 200:
         raise HTTPException(502, "Embedding service unavailable")
 
-    query_embedding = resp.json().get("embedding")
+    data = resp.json().get("data") or []
+    query_embedding = data[0].get("embedding") if data else None
     if not query_embedding:
         return {"query": q, "hits": [], "total": 0, "limit": limit}
 

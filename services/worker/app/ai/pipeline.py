@@ -1,9 +1,7 @@
 """
 AI pipeline — called by worker_ai for each article.
 
-Uses Ollama locally (https://ollama.com) with:
-  - nomic-embed-text  → embeddings (768-dim)
-  - mistral / qwen2.5 → summarize, classify, extract entities
+Uses the configured API provider for generation and 768-dimension embeddings.
 
 Prompts loaded from config/llm_prompts.yaml
 Scoring weights from config/scoring_rules.yaml
@@ -22,9 +20,13 @@ from app.utils.logging import get_logger
 
 log = get_logger("ai")
 
-OLLAMA_URL  = os.environ.get("OLLAMA_URL", "http://ollama:11434")
-LLM_MODEL   = os.environ.get("LLM_MODEL", "mistral")
-EMBED_MODEL = os.environ.get("EMBEDDING_MODEL", os.environ.get("EMBED_MODEL", "nomic-embed-text"))
+LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "openai").strip().lower()
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "").strip()
+OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").strip().rstrip("/")
+LLM_MODEL = os.environ.get("OPENAI_MODEL", os.environ.get("LLM_MODEL", "gpt-4.1-mini")).strip()
+EMBED_MODEL = os.environ.get("OPENAI_EMBEDDING_MODEL", os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")).strip()
+EMBED_DIMENSIONS = int(os.environ.get("EMBEDDING_DIMENSIONS", "768"))
+LLM_TIMEOUT_SECONDS = float(os.environ.get("LLM_TIMEOUT_SECONDS", "30"))
 PROMPTS_PATH  = os.environ.get("PROMPTS_PATH", "/app/config/llm_prompts.yaml")
 SCORING_PATH  = os.environ.get("SCORING_PATH", "/app/config/scoring_rules.yaml")
 USER_PROFILE_PATH = os.environ.get("USER_PROFILE_PATH", "/app/config/user_profile.yaml")
@@ -49,33 +51,73 @@ def _load_config():
                 _user_profile = yaml.safe_load(f) or {}
 
 
-def _ollama_generate(prompt: str, model: str = LLM_MODEL) -> str:
-    """Call Ollama /api/generate (sync via httpx)."""
+def _extract_openai_text(payload: dict) -> str:
+    output_text = payload.get("output_text")
+    if isinstance(output_text, str) and output_text.strip():
+        return output_text.strip()
+
+    parts: list[str] = []
+    for item in payload.get("output") or []:
+        if not isinstance(item, dict):
+            continue
+        for content in item.get("content") or []:
+            if not isinstance(content, dict):
+                continue
+            text = content.get("text")
+            if isinstance(text, str) and text.strip():
+                parts.append(text)
+    return " ".join(parts).strip()
+
+
+def _llm_generate(prompt: str, model: str = LLM_MODEL) -> str:
     try:
+        if LLM_PROVIDER != "openai":
+            log.warning("unsupported_llm_provider", provider=LLM_PROVIDER)
+            return ""
+        if not OPENAI_API_KEY:
+            log.warning("missing_openai_api_key")
+            return ""
         resp = httpx.post(
-            f"{OLLAMA_URL}/api/generate",
-            json={"model": model, "prompt": prompt, "stream": False},
-            timeout=120,
+            f"{OPENAI_BASE_URL}/responses",
+            headers={
+                "Authorization": f"Bearer {OPENAI_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={"model": model, "input": prompt, "max_output_tokens": 700},
+            timeout=LLM_TIMEOUT_SECONDS,
         )
         resp.raise_for_status()
-        return resp.json().get("response", "").strip()
+        return _extract_openai_text(resp.json())
     except Exception as exc:
-        log.warning("ollama_generate_error", error=str(exc))
+        log.warning("llm_generate_error", provider=LLM_PROVIDER, error=str(exc))
         return ""
 
 
-def _ollama_embed(text: str, model: str = EMBED_MODEL) -> Optional[list[float]]:
-    """Call Ollama /api/embeddings (sync via httpx)."""
+def _embed_text(text: str, model: str = EMBED_MODEL) -> Optional[list[float]]:
     try:
+        if LLM_PROVIDER != "openai":
+            log.warning("unsupported_embedding_provider", provider=LLM_PROVIDER)
+            return None
+        if not OPENAI_API_KEY:
+            log.warning("missing_openai_api_key")
+            return None
         resp = httpx.post(
-            f"{OLLAMA_URL}/api/embeddings",
-            json={"model": model, "prompt": text[:2000]},
-            timeout=60,
+            f"{OPENAI_BASE_URL}/embeddings",
+            headers={
+                "Authorization": f"Bearer {OPENAI_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={"model": model, "input": text[:4000], "dimensions": EMBED_DIMENSIONS},
+            timeout=LLM_TIMEOUT_SECONDS,
         )
         resp.raise_for_status()
-        return resp.json().get("embedding")
+        data = resp.json().get("data") or []
+        if not data:
+            return None
+        embedding = data[0].get("embedding")
+        return embedding if isinstance(embedding, list) else None
     except Exception as exc:
-        log.warning("ollama_embed_error", error=str(exc))
+        log.warning("embedding_error", provider=LLM_PROVIDER, error=str(exc))
         return None
 
 
@@ -85,21 +127,21 @@ def summarize_short(title: str, text: str) -> str:
     _load_config()
     prompt_tpl = _prompts.get("summarize_short", "Summarize in 3 bullet points:")
     content = f"{title}\n\n{text[:3000]}"
-    return _ollama_generate(f"{prompt_tpl}\n\n{content}")
+    return _llm_generate(f"{prompt_tpl}\n\n{content}")
 
 
 def summarize_long(title: str, text: str) -> str:
     _load_config()
     prompt_tpl = _prompts.get("summarize_long", "Summarize in 10 lines:")
     content = f"{title}\n\n{text[:5000]}"
-    return _ollama_generate(f"{prompt_tpl}\n\n{content}")
+    return _llm_generate(f"{prompt_tpl}\n\n{content}")
 
 
 def classify_article(title: str, text: str) -> str:
     _load_config()
     prompt_tpl = _prompts.get("classify", "Classify into one category:")
     content = f"{title}\n\n{text[:2000]}"
-    result = _ollama_generate(f"{prompt_tpl}\n\n{content}")
+    result = _llm_generate(f"{prompt_tpl}\n\n{content}")
     # Clean up — model may return extra text
     first_line = result.strip().split("\n")[0].strip()
     return first_line[:100] if first_line else "Other"
@@ -109,7 +151,7 @@ def extract_entities(title: str, text: str) -> dict:
     _load_config()
     prompt_tpl = _prompts.get("extract_entities", "Extract entities as JSON:")
     content = f"{title}\n\n{text[:3000]}"
-    raw = _ollama_generate(f"{prompt_tpl}\n\n{content}")
+    raw = _llm_generate(f"{prompt_tpl}\n\n{content}")
     # Parse JSON safely
     try:
         # Find JSON block
@@ -124,7 +166,7 @@ def extract_entities(title: str, text: str) -> dict:
 
 
 def generate_embedding(text: str) -> Optional[list[float]]:
-    return _ollama_embed(text)
+    return _embed_text(text)
 
 
 # ── Scoring ───────────────────────────────────────────────────────────────────

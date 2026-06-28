@@ -56,7 +56,7 @@ def collect_rss(source: dict) -> list[dict]:
         return []
 
     log.info("rss_fetch", url=url)
-    feed = feedparser.parse(url, request_headers={"User-Agent": "NewsNAS/1.0 (+https://github.com)"})
+    feed = feedparser.parse(url, request_headers={"User-Agent": "Helix/1.0 (+https://github.com)"})
 
     if feed.get("bozo"):
         log.warning("rss_parse_warning", url=url, exc=str(feed.get("bozo_exception", "")))

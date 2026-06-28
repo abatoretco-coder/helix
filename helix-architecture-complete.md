@@ -1,4 +1,4 @@
-# News NAS — Architecture complète pour un agent personnel de collecte, extraction, indexation et synthèse de news
+# Helix — Architecture complète pour un agent personnel de collecte, extraction, indexation et synthèse de news
 
 ## 0. Objectif du projet
 

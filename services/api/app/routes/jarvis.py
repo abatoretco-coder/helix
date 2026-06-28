@@ -15,9 +15,13 @@ from app.db.models import Article, ArticleAI, Briefing, Source
 
 router = APIRouter()
 
-OLLAMA_URL   = os.environ.get("OLLAMA_URL", "http://ollama:11434")
-EMBED_MODEL  = os.environ.get("EMBEDDING_MODEL", os.environ.get("EMBED_MODEL", "nomic-embed-text"))
-LLM_MODEL    = os.environ.get("LLM_MODEL", "mistral")
+LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "openai").strip().lower()
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "").strip()
+OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").strip().rstrip("/")
+EMBED_MODEL = os.environ.get("OPENAI_EMBEDDING_MODEL", os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")).strip()
+EMBED_DIMENSIONS = int(os.environ.get("EMBEDDING_DIMENSIONS", "768"))
+LLM_MODEL = os.environ.get("OPENAI_MODEL", os.environ.get("LLM_MODEL", "gpt-4.1-mini")).strip()
+LLM_TIMEOUT_SECONDS = float(os.environ.get("LLM_TIMEOUT_SECONDS", "30"))
 WATCHLIST_PATH = Path(os.environ.get("WATCHLIST_PATH", "/app/config/watchlist.yaml"))
 PROJECTS_PATH = Path(os.environ.get("RESEARCH_PROJECTS_PATH", "/app/config/research_projects.yaml"))
 
@@ -49,14 +53,21 @@ def _text_contains_any(text_blob: str, needles: list[str]) -> list[str]:
 
 
 async def _embedding_search(db: AsyncSession, query: str, limit: int) -> list[dict[str, Any]]:
+    if LLM_PROVIDER != "openai" or not OPENAI_API_KEY:
+        return []
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.post(
-            f"{OLLAMA_URL}/api/embeddings",
-            json={"model": EMBED_MODEL, "prompt": query},
+            f"{OPENAI_BASE_URL}/embeddings",
+            headers={
+                "Authorization": f"Bearer {OPENAI_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={"model": EMBED_MODEL, "input": query, "dimensions": EMBED_DIMENSIONS},
         )
     if resp.status_code != 200:
         raise HTTPException(502, "Embedding service unavailable")
-    query_embedding = resp.json().get("embedding")
+    data = resp.json().get("data") or []
+    query_embedding = data[0].get("embedding") if data else None
     if not query_embedding:
         return []
 
@@ -140,6 +151,24 @@ def _entities_blob(entities: Any) -> str:
                 values.append(str(value))
         return " ".join(values).lower()
     return str(entities).lower()
+
+
+def _extract_openai_text(payload: dict[str, Any]) -> str:
+    output_text = payload.get("output_text")
+    if isinstance(output_text, str) and output_text.strip():
+        return output_text.strip()
+
+    parts: list[str] = []
+    for item in payload.get("output") or []:
+        if not isinstance(item, dict):
+            continue
+        for content in item.get("content") or []:
+            if not isinstance(content, dict):
+                continue
+            text = content.get("text")
+            if isinstance(text, str) and text.strip():
+                parts.append(text)
+    return " ".join(parts).strip()
 
 
 async def _sources_for_mode(db: AsyncSession, payload: JarvisQuery, limit: int) -> list[dict[str, Any]]:
@@ -241,13 +270,19 @@ Return a direct answer with short, factual sentences."""
 
     answer = "No data available for this query."
     try:
+        if LLM_PROVIDER != "openai" or not OPENAI_API_KEY:
+            raise RuntimeError("llm_api_not_configured")
         async with httpx.AsyncClient(timeout=60) as client:
             llm_resp = await client.post(
-                f"{OLLAMA_URL}/api/generate",
-                json={"model": LLM_MODEL, "prompt": prompt, "stream": False},
+                f"{OPENAI_BASE_URL}/responses",
+                headers={
+                    "Authorization": f"Bearer {OPENAI_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={"model": LLM_MODEL, "input": prompt, "max_output_tokens": 700},
             )
         if llm_resp.status_code == 200:
-            answer = llm_resp.json().get("response", "").strip() or answer
+            answer = _extract_openai_text(llm_resp.json()) or answer
     except Exception:
         answer = "LLM unavailable; returning structured sources only."
 

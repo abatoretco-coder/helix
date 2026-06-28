@@ -1,6 +1,6 @@
-# News NAS Dashboard
+# Helix Dashboard
 
-Next.js 14 frontend for the News NAS platform.
+Next.js 14 frontend for the Helix platform.
 
 ## Development
 
@@ -21,8 +21,8 @@ npm start
 ## Docker
 
 ```bash
-docker build -t news-nas-dashboard .
-docker run -p 3000:3000 -e NEXT_PUBLIC_API_URL=http://api:8000 news-nas-dashboard
+docker build -t helix-dashboard .
+docker run -p 3000:3000 -e NEXT_PUBLIC_API_URL=http://api:8000 helix-dashboard
 ```
 
 ## Environment Variables

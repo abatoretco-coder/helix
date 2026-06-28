@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "News NAS",
+  title: "Helix",
   description: "Personal news intelligence platform",
 };
 

@@ -24,7 +24,7 @@ log = get_logger("extractor")
 MORSS_URL = os.environ.get("MORSS_URL", "http://morss:8080")
 ENABLE_MORSS_FOR_ALL = os.environ.get("ENABLE_MORSS_FOR_ALL", "false").lower() == "true"
 _SESSION = requests.Session()
-_SESSION.headers["User-Agent"] = "NewsNAS/1.0 (+https://github.com)"
+_SESSION.headers["User-Agent"] = "Helix/1.0 (+https://github.com)"
 _SESSION.headers["Accept-Language"] = "en,fr;q=0.9"
 
 

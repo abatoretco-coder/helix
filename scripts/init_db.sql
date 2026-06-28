@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- News NAS — PostgreSQL schema
+-- Helix — PostgreSQL schema
 -- Run automatically by Docker on first startup via init_db.sql
 -- ─────────────────────────────────────────────────────────────────────────────
 

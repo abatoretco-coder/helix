@@ -14,7 +14,7 @@ services:
       - ./data/postgres:/var/lib/postgresql/data
       - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${POSTGRES_PORT:-15432}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U news -d newsdb"]
       interval: 10s
@@ -98,14 +98,17 @@ services:
       CRON_MIN: "*/15"
       TZ: Europe/Paris
     ports:
-      - "${FRESHRSS_PORT:-8080}:80"
+      - "${FRESHRSS_PORT:-8082}:80"
 
   # ── Local LLM ─────────────────────────────────────────────────────────────
 
   ollama:
     image: ollama/ollama:latest
     container_name: news_ollama
+    profiles: ["ollama"]
     restart: unless-stopped
+    mem_limit: ${OLLAMA_MEMORY_LIMIT:-2g}
+    memswap_limit: ${OLLAMA_MEMORY_SWAP_LIMIT:-6g}
     volumes:
       - ./data/ollama:/root/.ollama
     ports:
@@ -143,7 +146,13 @@ services:
       REQUIRE_API_TOKEN: ${REQUIRE_API_TOKEN:-false}
       HOME_ASSISTANT_WEBHOOK_URL: ${HOME_ASSISTANT_WEBHOOK_URL:-}
       HOME_ASSISTANT_WEBHOOK_TOKEN: ${HOME_ASSISTANT_WEBHOOK_TOKEN:-}
-      OLLAMA_URL: http://ollama:11434
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-768}
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-30}
       MINIO_ENDPOINT: minio:9000
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
@@ -226,12 +235,16 @@ services:
         condition: service_healthy
       meilisearch:
         condition: service_healthy
-      ollama:
-        condition: service_started
     environment:
       DATABASE_URL: postgresql+asyncpg://news:${POSTGRES_PASSWORD}@postgres:5432/newsdb
       REDIS_URL: redis://redis:6379/0
-      OLLAMA_URL: http://ollama:11434
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-768}
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-30}
       MEILI_URL: http://meilisearch:7700
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
       SOURCES_PATH: /app/config/sources.yaml
@@ -258,7 +271,13 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://news:${POSTGRES_PASSWORD}@postgres:5432/newsdb
       REDIS_URL: redis://redis:6379/0
-      OLLAMA_URL: http://ollama:11434
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-768}
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-30}
       CLUSTER_SIMILARITY_THRESHOLD: ${CLUSTER_SIMILARITY_THRESHOLD:-0.88}
       CLUSTER_WINDOW_HOURS: ${CLUSTER_WINDOW_HOURS:-72}
       APP_ENV: production
@@ -282,7 +301,13 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://news:${POSTGRES_PASSWORD}@postgres:5432/newsdb
       REDIS_URL: redis://redis:6379/0
-      OLLAMA_URL: http://ollama:11434
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-768}
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-30}
       DAILY_BRIEFING_ENABLED: ${DAILY_BRIEFING_ENABLED:-true}
       DAILY_BRIEFING_TIMEZONE: ${DAILY_BRIEFING_TIMEZONE:-Europe/Paris}
       DAILY_BRIEFING_HOUR: ${DAILY_BRIEFING_HOUR:-7}
@@ -343,7 +368,7 @@ services:
       DASHBOARD_BASIC_AUTH_USER: ${DASHBOARD_BASIC_AUTH_USER:-}
       DASHBOARD_BASIC_AUTH_PASSWORD: ${DASHBOARD_BASIC_AUTH_PASSWORD:-}
     ports:
-      - "${DASHBOARD_PORT:-3000}:3000"
+      - "${DASHBOARD_PORT:-13000}:3000"
 
   # ── Monitoring ─────────────────────────────────────────────────────────────
 

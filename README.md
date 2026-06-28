@@ -1,4 +1,4 @@
-# 📰 News NAS — Personal Intelligence Platform
+# 📰 Helix — Personal Intelligence Platform
 
 A self-hosted news aggregation, extraction, and AI-powered intelligence platform running on your NAS.
 

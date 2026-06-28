@@ -18,6 +18,7 @@ from app.routes import (
     inbox,
     jarvis,
     metrics,
+    news,
     projects,
     queues,
     search,
@@ -35,7 +36,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(
-    title="News NAS API",
+    title="Helix API",
     version="0.1.0",
     description="Personal news intelligence platform API.",
     lifespan=lifespan,
@@ -58,6 +59,7 @@ app.include_router(clusters.router, prefix="/clusters", tags=["clusters"])
 app.include_router(briefings.router, prefix="/briefings", tags=["briefings"])
 app.include_router(jarvis.router, prefix="/jarvis", tags=["jarvis"])
 app.include_router(metrics.router, tags=["operations"])
+app.include_router(news.router, prefix="/news", tags=["news"])
 app.include_router(queues.router, prefix="/queues", tags=["queues"])
 app.include_router(capabilities.router, prefix="/capabilities", tags=["capabilities"])
 app.include_router(watchlist.router, prefix="/watchlist", tags=["watchlist"])
@@ -78,6 +80,7 @@ app.include_router(clusters.router, prefix="/v1/clusters", tags=["clusters-v1"],
 app.include_router(briefings.router, prefix="/v1/briefings", tags=["briefings-v1"], dependencies=[Depends(require_api_token)])
 app.include_router(jarvis.router, prefix="/v1/jarvis", tags=["jarvis-v1"], dependencies=[Depends(require_api_token)])
 app.include_router(metrics.router, prefix="/v1", tags=["operations-v1"], dependencies=[Depends(require_api_token)])
+app.include_router(news.router, prefix="/v1/news", tags=["news-v1"], dependencies=[Depends(require_api_token)])
 app.include_router(queues.router, prefix="/v1/queues", tags=["queues-v1"], dependencies=[Depends(require_api_token)])
 app.include_router(queues.admin_router, prefix="/v1/queues", tags=["queues-v1-admin"], dependencies=[Depends(require_api_token)])
 app.include_router(capabilities.router, prefix="/v1/capabilities", tags=["capabilities-v1"], dependencies=[Depends(require_api_token)])
