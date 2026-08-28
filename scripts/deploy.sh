@@ -13,7 +13,6 @@ NAS_IP="${NAS_IP:-192.168.1.50}"
 FRESHRSS_PORT="${FRESHRSS_PORT:-8080}"
 DASHBOARD_PORT="${DASHBOARD_PORT:-13000}"
 PROMETHEUS_PORT="${PROMETHEUS_PORT:-19090}"
-INSTALL_OLLAMA="${INSTALL_OLLAMA:-false}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
@@ -53,22 +52,8 @@ until docker compose exec -T postgres pg_isready -U news -d newsdb -q; do
 done
 echo "      PostgreSQL ready ✓"
 
-# ── 5. Optional local model runtime ──────────────────────────────────────────
-if [ "$INSTALL_OLLAMA" = "true" ]; then
-    echo "[5/7] Starting optional Ollama + pulling models ..."
-    docker compose --profile ollama up -d ollama
-    sleep 5
-
-    echo "      Pulling nomic-embed-text (embeddings) ..."
-    docker compose exec -T ollama ollama pull nomic-embed-text
-
-    echo "      Pulling mistral (summaries / classification) ..."
-    docker compose exec -T ollama ollama pull mistral
-
-    echo "      Models ready ✓"
-else
-    echo "[5/7] Skipping Ollama (set INSTALL_OLLAMA=true to enable optional local models)"
-fi
+# ── 5. Shared local model runtime ────────────────────────────────────────────
+echo "[5/7] Using the shared Ollama runtime on jarvis_ai_runtime (no model pull)."
 
 # ── 6. Import awesome-rss-feeds ───────────────────────────────────────────────
 echo "[6/7] Importing feeds from awesome-rss-feeds ..."

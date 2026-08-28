@@ -125,7 +125,7 @@ services:
       HOME_ASSISTANT_WEBHOOK_URL: ${HOME_ASSISTANT_WEBHOOK_URL:-}
       HOME_ASSISTANT_WEBHOOK_TOKEN: ${HOME_ASSISTANT_WEBHOOK_TOKEN:-}
       LLM_PROVIDER: ${LLM_PROVIDER:-openai}
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama-central:11434}
       NEWS_SUMMARY_PROVIDER: ${NEWS_SUMMARY_PROVIDER:-local}
       BACKGROUND_AI_ENABLED: ${BACKGROUND_AI_ENABLED:-false}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
@@ -237,7 +237,7 @@ services:
       DATABASE_URL: postgresql+asyncpg://news:${POSTGRES_PASSWORD}@postgres:5432/newsdb
       REDIS_URL: redis://redis:6379/0
       LLM_PROVIDER: ${LLM_PROVIDER:-openai}
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama-central:11434}
       NEWS_SUMMARY_PROVIDER: ${NEWS_SUMMARY_PROVIDER:-local}
       BACKGROUND_AI_ENABLED: ${BACKGROUND_AI_ENABLED:-false}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
@@ -286,7 +286,7 @@ services:
       DATABASE_URL: postgresql+asyncpg://news:${POSTGRES_PASSWORD}@postgres:5432/newsdb
       REDIS_URL: redis://redis:6379/0
       LLM_PROVIDER: ${LLM_PROVIDER:-openai}
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama-central:11434}
       NEWS_SUMMARY_PROVIDER: ${NEWS_SUMMARY_PROVIDER:-local}
       BACKGROUND_AI_ENABLED: ${BACKGROUND_AI_ENABLED:-false}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
@@ -302,6 +302,9 @@ services:
       APP_ENV: production
     volumes:
       - ./config:/app/config:ro
+    networks:
+      - default
+      - jarvis_ai_runtime
 
   # ── Briefing worker ───────────────────────────────────────────────────────
 
@@ -321,7 +324,7 @@ services:
       DATABASE_URL: postgresql+asyncpg://news:${POSTGRES_PASSWORD}@postgres:5432/newsdb
       REDIS_URL: redis://redis:6379/0
       LLM_PROVIDER: ${LLM_PROVIDER:-openai}
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama-central:11434}
       NEWS_SUMMARY_PROVIDER: ${NEWS_SUMMARY_PROVIDER:-local}
       BACKGROUND_AI_ENABLED: ${BACKGROUND_AI_ENABLED:-false}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
@@ -345,6 +348,9 @@ services:
     volumes:
       - ./config:/app/config:ro
       - ./exports:/app/exports
+    networks:
+      - default
+      - jarvis_ai_runtime
 
   # ── Cleanup/retention worker ──────────────────────────────────────────────
 

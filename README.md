@@ -95,7 +95,7 @@ Wait 5-10 minutes for everything to stabilize.
 | Meilisearch | 7700 | Full-text search |
 | FreshRSS | `${FRESHRSS_PORT:-8080}` | RSS cockpit + UI |
 | morss | 8081 | RSS enrichment proxy |
-| Ollama | 11434 | Optional local model runtime, only with `INSTALL_OLLAMA=true` / Compose profile `ollama` |
+| Ollama | 11434 | Shared local runtime on `jarvis_ai_runtime` (`ollama-central`) |
 | API | 8000 | FastAPI backend |
 | Dashboard | `${DASHBOARD_PORT:-3000}` | Next.js frontend |
 
@@ -419,12 +419,11 @@ docker compose restart worker_cluster
 docker compose restart worker_briefing
 ```
 
-**Optional Ollama local runtime?**
-```bash
-INSTALL_OLLAMA=true ./scripts/deploy.sh
-# or:
-docker compose --profile ollama up -d ollama
-```
+**Ollama local runtime?**
+
+Helix réutilise le runtime commun exposé sous `ollama-central` sur le réseau
+Docker externe `jarvis_ai_runtime`. Il ne démarre pas un second Ollama et ne
+télécharge aucun modèle pendant son déploiement.
 
 **Out of disk space?**
 ```bash
