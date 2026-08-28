@@ -38,7 +38,7 @@ ssh vm300 "cd /opt/naas/stacks/news-nas; docker compose logs --tail 100 worker_a
 - Port deja alloue: changer variables *_PORT dans .env et relancer.
 - API unhealthy: verifier dependances postgres/redis/meili puis logs api.
 - Collect errors source: verifier format de sources.yaml.
-- Slow AI: verifier modeles Ollama et ressources CPU/RAM.
+- Cout/latence AI: verifier `BACKGROUND_AI_ENABLED`, les appels endpoint explicites et les logs OpenAI/provider.
 
 ## 5) Procedure de rollback simple
 - Revenir au commit precedent:

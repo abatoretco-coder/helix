@@ -7,11 +7,12 @@ from __future__ import annotations
 import os
 import time
 import re
+from collections import Counter
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 
 import yaml
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from app.collectors.rss import collect_rss
 from app.collectors.google_news import collect_google_news
@@ -19,18 +20,26 @@ from app.collectors.reddit import collect_reddit
 from app.collectors.hackernews import collect_hackernews
 from app.collectors.github import collect_github_trending
 from app.collectors.youtube import collect_youtube
+from app.collectors.structured_api import (
+    collect_cisa_kev, collect_eurostat, collect_github_advisories,
+    collect_github_releases, collect_openalex, collect_datagouv_dataset,
+)
 from app.storage.postgres import (
     get_session, upsert_raw_item,
     mark_source_success, mark_source_error, log_processing,
 )
 from app.storage.redis_queue import enqueue
+from app.policy.relevance import item_decision, source_decision
 from app.utils.urls import normalize_url
 from app.utils.logging import get_logger, setup_logging
-from app.db.models import Source
+from app.db.models import RawItem, Source
 
 log = get_logger("worker.collect")
 
 SOURCES_PATH = os.environ.get("SOURCES_PATH", "/app/config/sources.yaml")
+COLLECT_ACTIVE_SLEEP_SECONDS = int(os.environ.get("COLLECT_ACTIVE_SLEEP_SECONDS", "30"))
+COLLECT_IDLE_SLEEP_SECONDS = int(os.environ.get("COLLECT_IDLE_SLEEP_SECONDS", "60"))
+COLLECT_MAX_DUE_SOURCES = int(os.environ.get("COLLECT_MAX_DUE_SOURCES", "0"))
 
 _COLLECTOR_MAP = {
     "rss":             collect_rss,
@@ -40,6 +49,12 @@ _COLLECTOR_MAP = {
     "hackernews":      collect_hackernews,
     "github_trending": collect_github_trending,
     "youtube_channel": collect_youtube,
+    "cisa_kev":       collect_cisa_kev,
+    "github_advisories": collect_github_advisories,
+    "github_releases": collect_github_releases,
+    "openalex":       collect_openalex,
+    "eurostat":       collect_eurostat,
+    "datagouv_dataset": collect_datagouv_dataset,
 }
 
 
@@ -117,6 +132,8 @@ def _get_due_sources(session) -> list[Source]:
     due = []
     now = datetime.now(timezone.utc)
     for src in sources:
+        if not source_decision(src).accepted:
+            continue
         if src.last_checked_at is None:
             due.append(src)
             continue
@@ -127,8 +144,19 @@ def _get_due_sources(session) -> list[Source]:
         if now >= next_check:
             due.append(src)
 
-    # Sort by priority
-    due.sort(key=lambda s: s.priority)
+    def due_rank(source: Source) -> tuple[int, float]:
+        last = source.last_checked_at
+        if last is None:
+            return int(source.priority or 3), float("-inf")
+        if last.tzinfo is None:
+            last = last.replace(tzinfo=timezone.utc)
+        return int(source.priority or 3), last.timestamp()
+
+    # Priority first, then oldest checked source to avoid starving lower-volume feeds.
+    due.sort(key=due_rank)
+    if COLLECT_MAX_DUE_SOURCES > 0 and len(due) > COLLECT_MAX_DUE_SOURCES:
+        log.info("collect_due_limited", due=len(due), selected=COLLECT_MAX_DUE_SOURCES)
+        due = due[:COLLECT_MAX_DUE_SOURCES]
     return due
 
 
@@ -173,10 +201,24 @@ def _run_once() -> int:
 
                 items = collector(source_dict)
                 new_count = 0
+                duplicate_count = 0
+                filtered_count = 0
+                filtered_reasons: Counter[str] = Counter()
+                new_item_ids: list[int] = []
 
                 for item in items:
                     raw_url = item.get("url", "")
                     if not raw_url:
+                        continue
+                    decision = item_decision(
+                        source,
+                        item.get("title"),
+                        item.get("snippet"),
+                        item.get("published_at"),
+                    )
+                    if not decision.accepted:
+                        filtered_count += 1
+                        filtered_reasons[decision.reason or "policy_rejected"] += 1
                         continue
                     norm_url = normalize_url(raw_url)
                     new_id = upsert_raw_item(
@@ -190,16 +232,51 @@ def _run_once() -> int:
                         raw_payload=item.get("raw_payload", {}),
                     )
                     if new_id is not None:
-                        enqueue("extract", str(new_id))
+                        # Never publish a queue message for an uncommitted row.
+                        # The extract worker can otherwise consume it before this
+                        # source transaction is visible and permanently lose it.
+                        new_item_ids.append(int(new_id))
                         new_count += 1
+                    else:
+                        duplicate_count += 1
 
                 duration_ms = int((time.monotonic() - t0) * 1000)
                 mark_source_success(session, source.id)
                 log_processing(session, "source", source.id, "collect", "success",
-                                f"{new_count} new items", duration_ms=duration_ms)
+                                f"fetched={len(items)} new={new_count} duplicates={duplicate_count} "
+                                f"filtered={filtered_count} reasons={dict(filtered_reasons)}",
+                                payload={
+                                    "fetched": len(items),
+                                    "new": new_count,
+                                    "duplicates": duplicate_count,
+                                    "filtered": filtered_count,
+                                    "filtered_reasons": dict(filtered_reasons),
+                                },
+                                duration_ms=duration_ms)
                 # Persist progress source-by-source to avoid long-cycle data loss on restart.
                 session.commit()
-                log.info("source_collected", source=source.name, new=new_count, ms=duration_ms)
+                for raw_item_id in new_item_ids:
+                    enqueue("extract", str(raw_item_id))
+                if new_item_ids:
+                    # A committed `new` row is recoverable if Redis is briefly
+                    # unavailable; after successful enqueue, mark its intended
+                    # next stage for operational visibility.
+                    session.execute(
+                        update(RawItem)
+                        .where(RawItem.id.in_(new_item_ids), RawItem.status == "new")
+                        .values(status="queued_for_extraction")
+                    )
+                    session.commit()
+                log.info(
+                    "source_collected",
+                    source=source.name,
+                    fetched=len(items),
+                    new=new_count,
+                    duplicates=duplicate_count,
+                    filtered=filtered_count,
+                    filtered_reasons=dict(filtered_reasons),
+                    ms=duration_ms,
+                )
                 total_new += new_count
 
             except Exception as exc:
@@ -213,7 +290,13 @@ def _run_once() -> int:
 
 def main():
     setup_logging("worker.collect")
-    log.info("collect_worker_start")
+    log.info(
+        "collect_worker_start",
+        active_sleep_seconds=COLLECT_ACTIVE_SLEEP_SECONDS,
+        idle_sleep_seconds=COLLECT_IDLE_SLEEP_SECONDS,
+        max_due_sources=COLLECT_MAX_DUE_SOURCES,
+    )
+    new_items = 0
 
     while True:
         try:
@@ -222,8 +305,7 @@ def main():
         except Exception as exc:
             log.error("collect_cycle_error", error=str(exc))
 
-        # Sleep between cycles (60s default, shorter if items were found)
-        sleep_s = 30 if new_items > 0 else 60
+        sleep_s = COLLECT_ACTIVE_SLEEP_SECONDS if new_items > 0 else COLLECT_IDLE_SLEEP_SECONDS
         time.sleep(sleep_s)
 
 

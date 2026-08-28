@@ -7,7 +7,7 @@ Helix is being built as a local-first news intelligence system for a NAS: it sho
 For the current repository audit, applied fixes, and execution-focused roadmap, see [Repository Analysis and Applied Roadmap](REPOSITORY_ANALYSIS_AND_ROADMAP.md).
 
 ### Guiding principles
-- Local-first by default, with no dependency on external SaaS for the core pipeline.
+- Local-first by default for ingestion, storage, and default news summaries; OpenAI usage must stay explicit, endpoint-triggered, and budgeted.
 - Reliability before breadth: every new source or AI feature must preserve end-to-end stability.
 - Measurable improvements only: each milestone should have a visible operational or product gain.
 - Prefer small composable services and queues over tightly coupled monolith logic.
@@ -40,7 +40,7 @@ What success looks like:
 - Operators can verify the stack quickly after a restart or deployment.
 
 Dependencies:
-- PostgreSQL, Redis, MinIO, MeiliSearch, Ollama.
+- PostgreSQL, Redis, MinIO, MeiliSearch, and optional OpenAI API access for explicit AI features.
 - Core workers for extraction, AI, clustering, and briefing.
 
 ### Features
@@ -50,7 +50,8 @@ Dependencies:
 - PostgreSQL + pgvector storage
 - MinIO raw storage
 - Meilisearch indexing
-- Ollama summarization and embeddings
+- OpenAI-compatible summarization and embeddings when `BACKGROUND_AI_ENABLED=true`
+- Per-endpoint OpenAI usage counters and budget controls
 - Cluster generation
 - Daily briefing generation
 - Basic FastAPI endpoints

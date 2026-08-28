@@ -7,6 +7,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
+from app.openai_usage import complete_openai_call, reserve_openai_call
 
 router = APIRouter()
 
@@ -16,6 +17,8 @@ LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "openai").strip().lower()
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "").strip()
 OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").strip().rstrip("/")
 EMBED_MODEL = os.environ.get("OPENAI_EMBEDDING_MODEL", os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")).strip()
+OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://ollama:11434").strip().rstrip("/")
+OLLAMA_EMBED_MODEL = os.environ.get("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text").strip()
 EMBED_DIMENSIONS = int(os.environ.get("EMBEDDING_DIMENSIONS", "768"))
 
 
@@ -69,22 +72,43 @@ async def semantic_search_articles(
     limit: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ):
-    if LLM_PROVIDER != "openai" or not OPENAI_API_KEY:
-        raise HTTPException(503, "Embedding API is not configured")
-    async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.post(
-            f"{OPENAI_BASE_URL}/embeddings",
-            headers={
-                "Authorization": f"Bearer {OPENAI_API_KEY}",
-                "Content-Type": "application/json",
-            },
-            json={"model": EMBED_MODEL, "input": q, "dimensions": EMBED_DIMENSIONS},
-        )
-    if resp.status_code != 200:
-        raise HTTPException(502, "Embedding service unavailable")
-
-    data = resp.json().get("data") or []
-    query_embedding = data[0].get("embedding") if data else None
+    query_embedding = None
+    if LLM_PROVIDER == "ollama":
+        try:
+            async with httpx.AsyncClient(timeout=30) as client:
+                resp = await client.post(
+                    f"{OLLAMA_BASE_URL}/api/embed",
+                    json={"model": OLLAMA_EMBED_MODEL, "input": q[:4000]},
+                )
+            payload = resp.json() if resp.content else {}
+            embeddings = payload.get("embeddings") or []
+            query_embedding = embeddings[0] if embeddings else None
+        except httpx.HTTPError as exc:
+            raise HTTPException(502, "Local embedding service unavailable") from exc
+    elif LLM_PROVIDER == "openai" and OPENAI_API_KEY:
+        event = await reserve_openai_call(db, endpoint="semantic-search", operation="embedding", model=EMBED_MODEL)
+        try:
+            async with httpx.AsyncClient(timeout=30) as client:
+                resp = await client.post(
+                    f"{OPENAI_BASE_URL}/embeddings",
+                    headers={
+                        "Authorization": f"Bearer {OPENAI_API_KEY}",
+                        "Content-Type": "application/json",
+                    },
+                    json={"model": EMBED_MODEL, "input": q, "dimensions": EMBED_DIMENSIONS},
+                )
+            payload = resp.json() if resp.content else None
+            await complete_openai_call(
+                db, event, succeeded=resp.status_code == 200, payload=payload,
+                error_message=None if resp.status_code == 200 else f"openai_http_{resp.status_code}",
+            )
+        except Exception as exc:
+            await complete_openai_call(db, event, succeeded=False, error_message=str(exc))
+            raise HTTPException(502, "Embedding service unavailable") from exc
+        data = (payload or {}).get("data") or []
+        query_embedding = data[0].get("embedding") if data else None
+    else:
+        raise HTTPException(503, "Embedding provider is not configured")
     if not query_embedding:
         return {"query": q, "hits": [], "total": 0, "limit": limit}
 
@@ -110,11 +134,17 @@ async def semantic_search_articles(
         JOIN articles a ON a.id = ai.article_id
         LEFT JOIN sources s ON s.id = a.source_id
         WHERE ai.embedding IS NOT NULL
+          AND a.archived_at IS NULL
+          AND s.category = ANY(:visible_categories)
         {where_extra}
         ORDER BY ai.embedding <=> :emb
         LIMIT :limit
-        """
+    """
     )
+    params["visible_categories"] = [
+        "ai", "tech", "science", "supply_chain", "pharma", "climate",
+        "cybersecurity", "startups", "regulation", "geopolitics", "finance",
+    ]
     rows = (await db.execute(sql, params)).all()
     hits = [
         {

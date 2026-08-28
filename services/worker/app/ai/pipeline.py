@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 
@@ -24,10 +25,14 @@ LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "openai").strip().lower()
 BACKGROUND_AI_ENABLED = os.environ.get("BACKGROUND_AI_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "").strip()
 OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").strip().rstrip("/")
+OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://ollama:11434").strip().rstrip("/")
 LLM_MODEL = os.environ.get("OPENAI_MODEL", os.environ.get("LLM_MODEL", "gpt-4.1-mini")).strip()
 EMBED_MODEL = os.environ.get("OPENAI_EMBEDDING_MODEL", os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")).strip()
+OLLAMA_EMBED_MODEL = os.environ.get("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text").strip()
 EMBED_DIMENSIONS = int(os.environ.get("EMBEDDING_DIMENSIONS", "768"))
 LLM_TIMEOUT_SECONDS = float(os.environ.get("LLM_TIMEOUT_SECONDS", "30"))
+ARTICLE_OUTPUT_TOKENS = int(os.environ.get("ARTICLE_OUTPUT_TOKENS", "320"))
+BRIEFING_LANGUAGE = os.environ.get("BRIEFING_LANGUAGE", "fr").strip() or "fr"
 PROMPTS_PATH  = os.environ.get("PROMPTS_PATH", "/app/config/llm_prompts.yaml")
 SCORING_PATH  = os.environ.get("SCORING_PATH", "/app/config/scoring_rules.yaml")
 USER_PROFILE_PATH = os.environ.get("USER_PROFILE_PATH", "/app/config/user_profile.yaml")
@@ -35,6 +40,12 @@ USER_PROFILE_PATH = os.environ.get("USER_PROFILE_PATH", "/app/config/user_profil
 _prompts: dict = {}
 _scoring: dict = {}
 _user_profile: dict = {}
+ARTICLE_CATEGORIES = {
+    "ai", "local llm", "agents", "supply chain", "pharma logistics",
+    "transport", "carbon accounting", "warehouse automation", "robotics",
+    "saas", "startups", "cybersecurity", "geopolitics",
+    "european regulation", "climate", "finance", "travel", "culture", "other",
+}
 
 
 def _load_config():
@@ -70,11 +81,34 @@ def _extract_openai_text(payload: dict) -> str:
     return " ".join(parts).strip()
 
 
-def _llm_generate(prompt: str, model: str = LLM_MODEL) -> str:
+def _llm_generate(
+    prompt: str,
+    model: str = LLM_MODEL,
+    *,
+    json_mode: bool = False,
+    max_output_tokens: int | None = None,
+) -> str:
     try:
         if not BACKGROUND_AI_ENABLED:
             log.info("background_llm_skipped")
             return ""
+        if LLM_PROVIDER == "ollama":
+            payload = {
+                "model": model,
+                "prompt": prompt,
+                "stream": False,
+                "think": False,
+                "options": {"temperature": 0.2, "num_predict": max_output_tokens or ARTICLE_OUTPUT_TOKENS},
+            }
+            if json_mode:
+                payload["format"] = "json"
+            resp = httpx.post(
+                f"{OLLAMA_BASE_URL}/api/generate",
+                json=payload,
+                timeout=LLM_TIMEOUT_SECONDS,
+            )
+            resp.raise_for_status()
+            return str(resp.json().get("response") or "").strip()
         if LLM_PROVIDER != "openai":
             log.warning("unsupported_llm_provider", provider=LLM_PROVIDER)
             return ""
@@ -87,7 +121,7 @@ def _llm_generate(prompt: str, model: str = LLM_MODEL) -> str:
                 "Authorization": f"Bearer {OPENAI_API_KEY}",
                 "Content-Type": "application/json",
             },
-            json={"model": model, "input": prompt, "max_output_tokens": 700},
+            json={"model": model, "input": prompt, "max_output_tokens": max_output_tokens or ARTICLE_OUTPUT_TOKENS},
             timeout=LLM_TIMEOUT_SECONDS,
         )
         resp.raise_for_status()
@@ -102,6 +136,19 @@ def _embed_text(text: str, model: str = EMBED_MODEL) -> Optional[list[float]]:
         if not BACKGROUND_AI_ENABLED:
             log.info("background_embedding_skipped")
             return None
+        if LLM_PROVIDER == "ollama":
+            resp = httpx.post(
+                f"{OLLAMA_BASE_URL}/api/embed",
+                json={"model": OLLAMA_EMBED_MODEL, "input": text[:4000]},
+                timeout=LLM_TIMEOUT_SECONDS,
+            )
+            resp.raise_for_status()
+            embeddings = (resp.json() or {}).get("embeddings") or []
+            embedding = embeddings[0] if embeddings else None
+            if not isinstance(embedding, list) or len(embedding) != EMBED_DIMENSIONS:
+                log.warning("ollama_embedding_invalid", expected_dimensions=EMBED_DIMENSIONS, actual_dimensions=len(embedding or []))
+                return None
+            return embedding
         if LLM_PROVIDER != "openai":
             log.warning("unsupported_embedding_provider", provider=LLM_PROVIDER)
             return None
@@ -170,6 +217,110 @@ def extract_entities(title: str, text: str) -> dict:
         pass
     return {"people": [], "companies": [], "countries": [], "cities": [],
             "products": [], "technologies": [], "regulations": []}
+
+
+def normalize_article(title: str, text: str) -> dict:
+    """Produce the complete, database-ready enrichment in one local LLM call.
+
+    The worker still has deterministic fallbacks, so malformed or unavailable LLM
+    output never prevents the raw article from being stored and scored.
+    """
+    _load_config()
+    prompt_tpl = _prompts.get("normalize_article", "Return a JSON article record.")
+    content = f"TITLE:\n{title}\n\nARTICLE:\n{text[:6000]}"
+    raw = _llm_generate(f"{prompt_tpl}\n\n{content}", json_mode=True)
+    try:
+        start = raw.find("{")
+        end = raw.rfind("}") + 1
+        data = json.loads(raw[start:end]) if start >= 0 and end > start else {}
+    except (TypeError, ValueError, json.JSONDecodeError):
+        data = {}
+    if not isinstance(data, dict):
+        return {}
+
+    entity_keys = ("people", "companies", "countries", "cities", "products", "technologies", "regulations")
+    entities = data.get("entities") if isinstance(data.get("entities"), dict) else {}
+    data["entities"] = {
+        key: [str(item)[:160] for item in (entities.get(key) or []) if isinstance(item, (str, int, float))][:20]
+        for key in entity_keys
+    }
+    topics = data.get("topics") if isinstance(data.get("topics"), list) else []
+    data["topics"] = [str(item).strip()[:100] for item in topics if str(item).strip()][:8]
+    for key, limit in (("summary_short", 1200), ("summary_long", 4000), ("category", 100), ("sentiment", 32)):
+        value = data.get(key)
+        data[key] = str(value).strip()[:limit] if isinstance(value, (str, int, float)) else ""
+    if data["category"].lower() not in ARTICLE_CATEGORIES:
+        data["category"] = "Other"
+    if data["sentiment"].lower() not in {"positive", "neutral", "negative", "mixed"}:
+        data["sentiment"] = "neutral"
+
+    # A malformed or title-only local-model summary is worse than an honest
+    # extractive fallback: it is what turns a dashboard into a clickbait feed.
+    # Keep factual sentences from the extracted article when the model did not
+    # provide enough usable substance.
+    fallback_short = _extractive_summary(text, sentence_limit=3, character_limit=900)
+    fallback_long = _extractive_summary(text, sentence_limit=5, character_limit=1800)
+    if not _has_information_value(data["summary_short"], title):
+        data["summary_short"] = fallback_short
+    if not _has_information_value(data["summary_long"], title):
+        data["summary_long"] = fallback_long
+    return data
+
+
+def _extractive_summary(text: str, *, sentence_limit: int, character_limit: int) -> str:
+    """Deterministic factual fallback based on the real extracted article."""
+    clean = re.sub(r"\s+", " ", text or "").strip()
+    if not clean:
+        return ""
+    candidates = re.split(r"(?<=[.!?])\s+", clean)
+    selected: list[str] = []
+    total = 0
+    for candidate in candidates:
+        candidate = candidate.strip(" -•\t")
+        # Headings and marketing fragments do not make an informative fact.
+        if len(candidate) < 55 or len(candidate) > 480:
+            continue
+        normalized = candidate.lower()
+        # Do not promote a rhetorical clickbait question into the first fact.
+        if "?" in candidate or normalized.startswith(("et si ", "imaginez", "decouvrez", "voici")):
+            continue
+        if total + len(candidate) > character_limit and selected:
+            break
+        selected.append(candidate)
+        total += len(candidate)
+        if len(selected) >= sentence_limit:
+            break
+    return "\n".join(f"- {sentence}" for sentence in selected)
+
+
+def _has_information_value(summary: str, title: str) -> bool:
+    compact = re.sub(r"\s+", " ", summary or "").strip()
+    if len(compact) < 90:
+        return False
+    title_words = {word.lower() for word in re.findall(r"\w+", title or "") if len(word) >= 5}
+    summary_words = {word.lower() for word in re.findall(r"\w+", compact) if len(word) >= 5}
+    # A summary that mostly repeats the headline has no added value.
+    if summary_words and len(summary_words - title_words) < 5:
+        return False
+    return bool(re.search(r"[.!]|\n[-•]", compact))
+
+
+def synthesize_briefing(source_digest: str) -> str:
+    """Create a concise second-level synthesis from selected article summaries."""
+    _load_config()
+    prompt_tpl = _prompts.get("generate_briefing", "Summarize the selected news.")
+    if not source_digest.strip():
+        return ""
+    language_instruction = (
+        "MANDATORY: Write every heading and bullet in French. Translate source facts faithfully; "
+        "do not reuse English headings."
+        if BRIEFING_LANGUAGE.lower().startswith("fr")
+        else f"MANDATORY: Write every heading and bullet in {BRIEFING_LANGUAGE}."
+    )
+    return _llm_generate(
+        f"{prompt_tpl}\n\nLANGUAGE: {BRIEFING_LANGUAGE}\n{language_instruction}\n\nSOURCE DIGEST:\n{source_digest[:14000]}",
+        max_output_tokens=450,
+    )
 
 
 def generate_embedding(text: str) -> Optional[list[float]]:

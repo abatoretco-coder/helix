@@ -1,7 +1,7 @@
 from collections import Counter
 import os
 from pathlib import Path
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query
@@ -9,8 +9,9 @@ from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 import redis.asyncio as redis_async
 
-from app.db.models import Article, ArticleAI, ArticleCluster, Briefing, Cluster, ProcessingLog, RawItem, Source
+from app.db.models import Article, ArticleAI, ArticleCluster, Briefing, Cluster, OpenAIUsageEvent, ProcessingLog, RawItem, Source
 from app.db.session import get_db
+from app.openai_usage import configured_limits
 from app.queue import dead_queue_size
 
 router = APIRouter()
@@ -314,4 +315,55 @@ async def ops_summary(db: AsyncSession = Depends(get_db)):
             "path": str(obsidian_path),
             "exists": obsidian_path.exists(),
         },
+    }
+
+
+@router.get("/ops/openai-usage")
+async def openai_usage(
+    days: int = Query(30, ge=1, le=90),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return persisted usage for calls that an API client explicitly requested."""
+    since = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
+    rows = (
+        await db.execute(
+            select(
+                OpenAIUsageEvent.endpoint,
+                OpenAIUsageEvent.operation,
+                OpenAIUsageEvent.model,
+                OpenAIUsageEvent.status,
+                func.count().label("requests"),
+                func.coalesce(func.sum(OpenAIUsageEvent.input_tokens), 0).label("input_tokens"),
+                func.coalesce(func.sum(OpenAIUsageEvent.output_tokens), 0).label("output_tokens"),
+            )
+            .where(OpenAIUsageEvent.created_at >= since)
+            .group_by(
+                OpenAIUsageEvent.endpoint,
+                OpenAIUsageEvent.operation,
+                OpenAIUsageEvent.model,
+                OpenAIUsageEvent.status,
+            )
+            .order_by(OpenAIUsageEvent.endpoint, OpenAIUsageEvent.operation, OpenAIUsageEvent.status)
+        )
+    ).all()
+    total_requests = sum(int(row.requests) for row in rows)
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "since": since.replace(tzinfo=timezone.utc).isoformat(),
+        "days": days,
+        "usage_policy": "explicit_api_requests_only",
+        "limits": configured_limits(),
+        "total_requests": total_requests,
+        "breakdown": [
+            {
+                "endpoint": row.endpoint,
+                "operation": row.operation,
+                "model": row.model,
+                "status": row.status,
+                "requests": int(row.requests),
+                "input_tokens": int(row.input_tokens),
+                "output_tokens": int(row.output_tokens),
+            }
+            for row in rows
+        ],
     }

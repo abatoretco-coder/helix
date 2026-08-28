@@ -9,16 +9,17 @@ import time
 from datetime import datetime, timezone
 
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy import or_, select
 
-from app.db.models import Article, ArticleAI
+from app.db.models import Article, ArticleAI, RawItem
 from app.ai.pipeline import (
-    summarize_short, summarize_long,
-    classify_article, extract_entities,
+    normalize_article,
     generate_embedding, compute_scores,
 )
 from app.storage.postgres import get_session, mark_raw_item_status, log_processing
-from app.storage.redis_queue import dequeue, deserialize_payload, enqueue, enqueue_dead
-from app.storage.search import index_article
+from app.storage.redis_queue import dequeue, deserialize_payload, enqueue, enqueue_dead, queue_size
+from app.storage.search import delete_article, index_article
+from app.policy.relevance import article_decision
 from app.utils.logging import get_logger, setup_logging
 
 log = get_logger("worker.ai")
@@ -28,6 +29,12 @@ BACKGROUND_AI_ENABLED = os.environ.get("BACKGROUND_AI_ENABLED", "false").strip()
 AI_MAX_RETRIES = int(os.environ.get("AI_MAX_RETRIES", "3"))
 LOW_POWER_MODE = os.environ.get("LOW_POWER_MODE", "false").lower() in {"1", "true", "yes", "on"}
 WORKER_RATE_LIMIT_MS = int(os.environ.get("AI_WORKER_RATE_LIMIT_MS", os.environ.get("WORKER_RATE_LIMIT_MS", "0")))
+AI_BACKFILL_ENABLED = os.environ.get("AI_BACKFILL_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
+AI_BACKFILL_REFRESH_EXISTING = os.environ.get("AI_BACKFILL_REFRESH_EXISTING", "false").strip().lower() in {"1", "true", "yes", "on"}
+AI_BACKFILL_BATCH_SIZE = max(1, min(int(os.environ.get("AI_BACKFILL_BATCH_SIZE", "20")), 100))
+AI_QUEUE_MAX_PENDING = max(1, int(os.environ.get("AI_QUEUE_MAX_PENDING", "50")))
+AI_PENDING_REFILL_BATCH_SIZE = max(1, min(int(os.environ.get("AI_PENDING_REFILL_BATCH_SIZE", "10")), 50))
+AI_PENDING_REFILL_ENABLED = os.environ.get("AI_PENDING_REFILL_ENABLED", "true").strip().lower() in {"1", "true", "yes", "on"}
 
 
 def _decode_retry_payload(raw: str) -> tuple[str, int]:
@@ -57,16 +64,131 @@ def _loop_pause() -> None:
         time.sleep(delay_ms / 1000.0)
 
 
+def _fallback_category(article) -> str:
+    """Cheap, deterministic fallback; never make a second LLM call on failure."""
+    blob = " ".join(
+        str(value or "")
+        for value in (getattr(article, "title", None), getattr(article, "description", None), getattr(article, "text_content", None))
+    ).lower()
+    if any(term in blob for term in ("cybersecurity", "cyberattaque", "ransomware", "malware", "botnet", "vulnerability", "vulnerabilit", "exploit", "piratage")):
+        return "Cybersecurity"
+    if any(term in blob for term in ("artificial intelligence", "intelligence artificielle", "large language model", " llm", "openai", "anthropic", "mistral", "gemini", "ollama")):
+        return "AI"
+    if any(term in blob for term in ("supply chain", "logistique", "freight", "warehouse", "entrepot")):
+        return "Supply Chain"
+    if any(term in blob for term in ("regulation", "reglementation", "ai act", "directive", "commission europeenne")):
+        return "European Regulation"
+    category = (article.source.category if article.source else "") or ""
+    mapping = {
+        "ai": "AI", "tech": "SaaS", "supply_chain": "Supply Chain",
+        "pharma": "Pharma Logistics", "climate": "Climate",
+        "cybersecurity": "Cybersecurity", "startups": "Startups",
+        "regulation": "European Regulation", "geopolitics": "Geopolitics",
+        "finance": "Finance", "science": "Other",
+    }
+    return mapping.get(category.strip().lower(), "Other")
+
+
+def _empty_entities() -> dict[str, list[str]]:
+    return {
+        "people": [], "companies": [], "countries": [], "cities": [],
+        "products": [], "technologies": [], "regulations": [],
+    }
+
+
+def _enqueue_backfill_batch() -> int:
+    """Schedule a small, non-duplicating batch of articles without AI data.
+
+    This keeps the Redis queue bounded while progressively bringing the existing
+    catalogue to the same Ollama-backed database format as new articles.
+    """
+    if not AI_BACKFILL_ENABLED:
+        return 0
+    with get_session() as session:
+        statement = (
+            select(Article.id)
+            .outerjoin(ArticleAI, ArticleAI.article_id == Article.id)
+            .where(Article.archived_at.is_(None))
+            .where(
+                or_(
+                    ArticleAI.article_id.is_(None),
+                    ArticleAI.model_name.is_distinct_from(LLM_MODEL) if AI_BACKFILL_REFRESH_EXISTING else ArticleAI.article_id.is_(None),
+                )
+            )
+            .order_by(Article.published_at.desc().nullslast(), Article.id.desc())
+            .limit(AI_BACKFILL_BATCH_SIZE)
+        )
+        article_ids = [int(article_id) for article_id in session.execute(statement).scalars().all()]
+    for article_id in article_ids:
+        enqueue("ai", str(article_id))
+    if article_ids:
+        log.info("ai_backfill_enqueued", count=len(article_ids), first_article_id=article_ids[0])
+    return len(article_ids)
+
+
+def _enqueue_pending_ai_batch() -> int:
+    """Move only a small deferred batch into Redis once capacity is available."""
+    if not AI_PENDING_REFILL_ENABLED:
+        return 0
+    capacity = AI_QUEUE_MAX_PENDING - queue_size("ai")
+    if capacity <= 0:
+        return 0
+    limit = min(capacity, AI_PENDING_REFILL_BATCH_SIZE)
+    with get_session() as session:
+        rows = (
+            session.execute(
+                select(Article)
+                .join(RawItem, RawItem.id == Article.raw_item_id)
+                .where(Article.archived_at.is_(None))
+                .where(RawItem.status == "ai_pending")
+                .order_by(Article.published_at.desc().nullslast(), Article.id.desc())
+                .limit(limit)
+            )
+            .scalars()
+            .all()
+        )
+        article_ids = [int(article.id) for article in rows]
+        for article in rows:
+            mark_raw_item_status(session, article.raw_item_id, "queued_for_ai")
+    for article_id in article_ids:
+        enqueue("ai", str(article_id))
+    if article_ids:
+        log.info("ai_pending_refilled", count=len(article_ids))
+    return len(article_ids)
+
+
 def _process_article(article_id: int) -> None:
     with get_session() as session:
         article = session.get(Article, article_id)
         if not article:
             log.warning("article_not_found", id=article_id)
             return
+        if article.archived_at is not None:
+            log.info("ai_skip_archived", article_id=article_id)
+            return
+
+        admission = article_decision(article)
+        if not admission.accepted:
+            # A policy decision is an active-view removal, not merely a skipped
+            # enrichment task.  Otherwise a previously stored article can leak
+            # through search, a briefing or Jarvis even though it was rejected.
+            article.archived_at = datetime.now(timezone.utc)
+            if article.raw_item_id:
+                mark_raw_item_status(session, article.raw_item_id, "filtered_out", admission.reason)
+            log_processing(session, "article", article_id, "ai", "skip", admission.reason)
+            session.commit()
+            try:
+                delete_article(article_id)
+            except Exception as exc:
+                log.warning("ai_filtered_search_remove_failed", article_id=article_id, error=str(exc))
+            log.info("ai_filtered", article_id=article_id, reason=admission.reason)
+            return
 
         # Skip if already processed
         existing_ai = session.get(ArticleAI, article_id)
-        if existing_ai and existing_ai.final_score is not None:
+        if existing_ai and existing_ai.final_score is not None and (
+            not AI_BACKFILL_REFRESH_EXISTING or existing_ai.model_name == LLM_MODEL
+        ):
             log.debug("ai_already_processed", article_id=article_id)
             return
 
@@ -80,22 +202,26 @@ def _process_article(article_id: int) -> None:
 
         log.info("ai_start", article_id=article_id, title=title[:60])
 
-        # 1. Summarize
-        short_summary = summarize_short(title, text)
-        long_summary  = summarize_long(title, text)
+        # 1. Normalize once with the local model.  This is the canonical
+        # database shape for every collected article and avoids four separate
+        # generation calls for the same source text.
+        normalized = normalize_article(title, text)
+        short_summary = normalized.get("summary_short") or ""
+        long_summary = normalized.get("summary_long") or ""
 
         if not short_summary:
             short_summary = (article.description or title or "No summary available")[:800]
         if not long_summary:
             long_summary = short_summary
 
-        # 2. Classify
-        category = classify_article(title, text)
-        if not category:
-            category = "general"
+        # 2. Use the normalized taxonomy; retain conservative fallbacks if a
+        # local model is temporarily unavailable or returns invalid JSON.
+        category = normalized.get("category") or _fallback_category(article)
+        if str(category).strip().lower() in {"", "other"}:
+            category = _fallback_category(article)
 
-        # 3. Extract entities
-        entities = extract_entities(title, text)
+        # 3. Entity lists and sentiment are stored with the same record.
+        entities = normalized.get("entities") or _empty_entities()
         if not isinstance(entities, dict):
             entities = {}
 
@@ -120,8 +246,9 @@ def _process_article(article_id: int) -> None:
             "summary_short": short_summary,
             "summary_long": long_summary,
             "category": category,
-            "topics": [category],
+            "topics": normalized.get("topics") or [category],
             "entities": entities,
+            "sentiment": normalized.get("sentiment") or "neutral",
             "model_name": LLM_MODEL if BACKGROUND_AI_ENABLED else "metadata-only",
             "processed_at": datetime.now(timezone.utc),
             **scores,
@@ -184,6 +311,8 @@ def main():
         try:
             raw = dequeue("ai", timeout=5)
             if raw is None:
+                _enqueue_pending_ai_batch()
+                _enqueue_backfill_batch()
                 continue
             payload, retry_count = _decode_retry_payload(raw)
             article_id = int(payload.strip())

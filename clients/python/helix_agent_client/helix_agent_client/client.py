@@ -104,6 +104,7 @@ class HelixAgentClient:
         language: str = "fr",
         max_sources: int = 8,
         include_links: bool = True,
+        dashboard_items: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         return self._request(
             "POST",
@@ -114,8 +115,54 @@ class HelixAgentClient:
                 "language": language,
                 "max_sources": max_sources,
                 "include_links": include_links,
+                "dashboard_items": dashboard_items or [],
             },
         )
+
+    def news_items(
+        self,
+        *,
+        geo_filter: str = "france",
+        tab: str | None = None,
+        sectors: str | None = None,
+        view: str = "standard",
+        limit: int = 30,
+    ) -> dict[str, Any]:
+        return self._request(
+            "GET",
+            "/v1/news/items",
+            query={
+                "geoFilter": geo_filter,
+                "tab": tab,
+                "sectors": sectors,
+                "view": view,
+                "limit": limit,
+            },
+        )
+
+    def summarize_news(
+        self,
+        *,
+        scope_label: str,
+        items: list[dict[str, Any]],
+        scope_key: str | None = None,
+        sector_label: str | None = None,
+        context_facts: list[str] | None = None,
+    ) -> dict[str, Any]:
+        return self._request(
+            "POST",
+            "/v1/news/summary",
+            body={
+                "scopeKey": scope_key,
+                "scopeLabel": scope_label,
+                "sectorLabel": sector_label,
+                "contextFacts": context_facts or [],
+                "items": items,
+            },
+        )
+
+    def openai_usage(self, days: int = 30) -> dict[str, Any]:
+        return self._request("GET", "/v1/ops/openai-usage", query={"days": days})
 
     def source_recommendations(self, limit: int = 50) -> dict[str, Any]:
         return self._request("GET", "/v1/sources/recommendations", query={"limit": limit})

@@ -6,7 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
-from app.db.models import Article, RawItem, Source
+from app.db.models import Article, ProcessingLog, RawItem, Source
 from app.schemas.sources import SourceRead, SourceCreate, SourceUpdate
 
 router = APIRouter()
@@ -47,6 +47,7 @@ def _health_score(
     conversion_rate_7d: float | None,
     quality_avg: float | None,
     language_mismatch_rate_7d: float | None,
+    policy_filter_rate_7d: float | None,
     last_success_at,
 ) -> int:
     if not enabled:
@@ -66,6 +67,10 @@ def _health_score(
         score += min(max(int((quality_avg - 50) / 5), -10), 10)
     if language_mismatch_rate_7d is not None:
         score -= int(language_mismatch_rate_7d * 20)
+    if policy_filter_rate_7d is not None:
+        # A high rejection ratio means the feed is consuming collection work
+        # without producing admissible intelligence (old, promotional, relay).
+        score -= int(policy_filter_rate_7d * 20)
     if last_success_at is None:
         score -= 25
     elif last_success_at < datetime.utcnow() - timedelta(days=3):
@@ -83,6 +88,8 @@ def _quality_band(
     quality_avg: float | None,
     conversion_rate_7d: float | None,
     last_success_at,
+    fetched_7d: int,
+    policy_filter_rate_7d: float | None,
 ) -> str:
     if not enabled:
         return "disabled"
@@ -93,6 +100,8 @@ def _quality_band(
     if items_7d >= 20 and errors_7d <= 2 and (quality_avg or 0) >= 60 and (conversion_rate_7d or 0) >= 0.6:
         return "high_value"
     if items_7d >= 40 and (quality_avg or 0) < 45:
+        return "noisy"
+    if fetched_7d >= 20 and (policy_filter_rate_7d or 0) >= 0.70:
         return "noisy"
     if health_score < 70:
         return "watch"
@@ -111,6 +120,9 @@ def _diagnostics(
     conversion_rate_24h: float | None,
     language_mismatch_rate_7d: float | None,
     last_success_at,
+    fetched_7d: int,
+    policy_filtered_7d: int,
+    policy_filter_rate_7d: float | None,
 ) -> list[str]:
     reasons: list[str] = []
     if not enabled:
@@ -131,6 +143,8 @@ def _diagnostics(
         reasons.append("Many collected items did not become articles in the last 24h")
     if language_mismatch_rate_7d is not None and language_mismatch_rate_7d >= 0.25:
         reasons.append("Detected article languages often differ from source language")
+    if fetched_7d >= 20 and (policy_filter_rate_7d or 0) >= 0.70:
+        reasons.append(f"{policy_filtered_7d}/{fetched_7d} collected entries were rejected by policy")
     if last_success_at is None:
         reasons.append("Never collected successfully")
     elif last_success_at < datetime.utcnow() - timedelta(days=7):
@@ -153,6 +167,8 @@ def _recommendation(
     quality_avg: float | None,
     language_mismatch_rate_7d: float | None,
     last_success_at,
+    fetched_7d: int,
+    policy_filter_rate_7d: float | None,
 ) -> dict:
     if not enabled:
         return {
@@ -187,6 +203,15 @@ def _recommendation(
             "severity": "medium",
             "title": "Review language metadata",
             "detail": "Extracted article languages often differ from the configured source language, which can weaken filters and briefings.",
+            "target_priority": None,
+        }
+
+    if fetched_7d >= 20 and (policy_filter_rate_7d or 0) >= 0.85:
+        return {
+            "action": "quarantine_and_replace",
+            "severity": "high",
+            "title": "Quarantine and replace",
+            "detail": "Most collected entries are rejected before extraction; keep it out of the public feed and replace it with a direct publisher feed.",
             "target_priority": None,
         }
 
@@ -245,6 +270,7 @@ def _recommendation_rank(row: dict) -> tuple[int, int, int]:
         "refresh_or_disable": 1,
         "lower_priority": 2,
         "review_language": 3,
+        "quarantine_and_replace": 3,
         "monitor_errors": 4,
         "boost_priority": 5,
         "watch_stale": 6,
@@ -271,6 +297,32 @@ async def _source_health_rows(db: AsyncSession, source_id: int | None = None) ->
 
     if not source_ids:
         return []
+
+    # Collection attempts include duplicates and policy rejections, neither of
+    # which becomes a RawItem.  Keep them visible: otherwise a source that
+    # mostly sends old/promotional or unresolvable links deceptively appears
+    # quiet instead of noisy.
+    collection_logs = (
+        await db.execute(
+            select(ProcessingLog)
+            .where(ProcessingLog.item_type == "source")
+            .where(ProcessingLog.item_id.in_(source_ids))
+            .where(ProcessingLog.step == "collect")
+            .where(ProcessingLog.status == "success")
+            .where(ProcessingLog.created_at >= cutoff_7d)
+        )
+    ).scalars().all()
+    collection_metrics: dict[int, dict[str, int]] = {}
+    for entry in collection_logs:
+        payload = entry.payload if isinstance(entry.payload, dict) else {}
+        if not payload:
+            # Historical log rows did not contain structured counters.
+            continue
+        metrics = collection_metrics.setdefault(int(entry.item_id), {
+            "fetched": 0, "new": 0, "duplicates": 0, "filtered": 0,
+        })
+        for key in metrics:
+            metrics[key] += int(payload.get(key, 0) or 0)
 
     raw_counts_24h = {
         row.source_id: row.count
@@ -404,6 +456,12 @@ async def _source_health_rows(db: AsyncSession, source_id: int | None = None) ->
 
     rows: list[dict] = []
     for source in sources:
+        collection = collection_metrics.get(source.id, {})
+        fetched_7d = int(collection.get("fetched", 0))
+        collected_new_7d = int(collection.get("new", 0))
+        duplicates_7d = int(collection.get("duplicates", 0))
+        filtered_7d = int(collection.get("filtered", 0))
+        filter_rate_7d = (filtered_7d / fetched_7d) if fetched_7d else None
         total_items = int(raw_counts_24h.get(source.id, 0))
         total_items_7d = int(raw_counts_7d.get(source.id, 0))
         total_articles = int(articles_24h.get(source.id, 0))
@@ -439,6 +497,7 @@ async def _source_health_rows(db: AsyncSession, source_id: int | None = None) ->
             conversion_rate_7d,
             avg_quality_value,
             language_mismatch_rate,
+            filter_rate_7d,
             source.last_success_at,
         )
         quality_band = _quality_band(
@@ -449,6 +508,8 @@ async def _source_health_rows(db: AsyncSession, source_id: int | None = None) ->
             quality_avg=avg_quality_value,
             conversion_rate_7d=conversion_rate_7d,
             last_success_at=source.last_success_at,
+            fetched_7d=fetched_7d,
+            policy_filter_rate_7d=filter_rate_7d,
         )
         status = _health_status(
             bool(source.enabled),
@@ -474,6 +535,11 @@ async def _source_health_rows(db: AsyncSession, source_id: int | None = None) ->
                 "error_count": source.error_count,
                 "errors_24h": int(raw_errors_24h.get(source.id, 0)),
                 "errors_7d": int(raw_errors_7d.get(source.id, 0)),
+                "fetched_7d": fetched_7d,
+                "collected_new_7d": collected_new_7d,
+                "duplicates_7d": duplicates_7d,
+                "policy_filtered_7d": filtered_7d,
+                "policy_filter_rate_7d": round(filter_rate_7d, 3) if filter_rate_7d is not None else None,
                 "items_24h": total_items,
                 "items_7d": total_items_7d,
                 "articles_24h": total_articles,
@@ -501,6 +567,8 @@ async def _source_health_rows(db: AsyncSession, source_id: int | None = None) ->
                     quality_avg=avg_quality_value,
                     language_mismatch_rate_7d=language_mismatch_rate,
                     last_success_at=source.last_success_at,
+                    fetched_7d=fetched_7d,
+                    policy_filter_rate_7d=filter_rate_7d,
                 ),
                 "diagnostics": _diagnostics(
                     enabled=bool(source.enabled),
@@ -513,6 +581,9 @@ async def _source_health_rows(db: AsyncSession, source_id: int | None = None) ->
                     conversion_rate_24h=conversion_rate_24h,
                     language_mismatch_rate_7d=language_mismatch_rate,
                     last_success_at=source.last_success_at,
+                    fetched_7d=fetched_7d,
+                    policy_filtered_7d=filtered_7d,
+                    policy_filter_rate_7d=filter_rate_7d,
                 ),
                 "status": status,
             }

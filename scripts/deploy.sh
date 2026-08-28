@@ -11,8 +11,9 @@ set -euo pipefail
 
 NAS_IP="${NAS_IP:-192.168.1.50}"
 FRESHRSS_PORT="${FRESHRSS_PORT:-8080}"
-DASHBOARD_PORT="${DASHBOARD_PORT:-3000}"
+DASHBOARD_PORT="${DASHBOARD_PORT:-13000}"
 PROMETHEUS_PORT="${PROMETHEUS_PORT:-19090}"
+INSTALL_OLLAMA="${INSTALL_OLLAMA:-false}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
@@ -52,18 +53,22 @@ until docker compose exec -T postgres pg_isready -U news -d newsdb -q; do
 done
 echo "      PostgreSQL ready ✓"
 
-# ── 5. Start Ollama + pull models ────────────────────────────────────────────
-echo "[5/7] Starting Ollama + pulling models ..."
-docker compose up -d ollama
-sleep 5
+# ── 5. Optional local model runtime ──────────────────────────────────────────
+if [ "$INSTALL_OLLAMA" = "true" ]; then
+    echo "[5/7] Starting optional Ollama + pulling models ..."
+    docker compose --profile ollama up -d ollama
+    sleep 5
 
-echo "      Pulling nomic-embed-text (embeddings) ..."
-docker compose exec -T ollama ollama pull nomic-embed-text
+    echo "      Pulling nomic-embed-text (embeddings) ..."
+    docker compose exec -T ollama ollama pull nomic-embed-text
 
-echo "      Pulling mistral (summaries / classification) ..."
-docker compose exec -T ollama ollama pull mistral
+    echo "      Pulling mistral (summaries / classification) ..."
+    docker compose exec -T ollama ollama pull mistral
 
-echo "      Models ready ✓"
+    echo "      Models ready ✓"
+else
+    echo "[5/7] Skipping Ollama (set INSTALL_OLLAMA=true to enable optional local models)"
+fi
 
 # ── 6. Import awesome-rss-feeds ───────────────────────────────────────────────
 echo "[6/7] Importing feeds from awesome-rss-feeds ..."
@@ -81,6 +86,9 @@ fi
 echo "[7/7] Starting all services ..."
 docker compose up -d
 
+echo "      Applying database migrations ..."
+docker compose exec -T api alembic upgrade head
+
 echo ""
 echo "╔══════════════════════════════════════════════════════╗"
 echo "║  Helix is running!                                ║"
@@ -88,10 +96,8 @@ echo "║                                                      ║"
 echo "║  Dashboard   → http://${NAS_IP}:${DASHBOARD_PORT}              ║"
 echo "║  API         → http://${NAS_IP}:8000/docs          ║"
 echo "║  FreshRSS    → http://${NAS_IP}:${FRESHRSS_PORT}              ║"
-echo "║  Meilisearch → http://${NAS_IP}:7700              ║"
-echo "║  MinIO       → http://${NAS_IP}:9001              ║"
-echo "║  morss       → http://${NAS_IP}:8081              ║"
-echo "║  Prometheus  → http://${NAS_IP}:${PROMETHEUS_PORT}            ║"
+echo "║  Data services and Prometheus bind to localhost    ║"
+echo "║  (expose them only via an intentional proxy)       ║"
 echo "║  API Metrics → http://${NAS_IP}:8000/metrics      ║"
 echo "║                                                      ║"
 echo "║  Logs: docker compose logs -f worker_collect         ║"

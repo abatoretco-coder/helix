@@ -77,6 +77,13 @@ def collect_rss(source: dict) -> list[dict]:
                 "entry_id": entry.get("id"),
                 "author": entry.get("author"),
                 "tags": [t.get("term") for t in entry.get("tags", [])],
+                # Preserve what the feed actually provided.  Some first-party
+                # feeds contain the full article here, and losing it forced the
+                # extractor to re-fetch a thinner or blocked web page.
+                "content": entry.get("content"),
+                "summary": _extract_text(entry),
+                "publisher": (entry.get("source") or {}).get("title"),
+                "publisher_url": (entry.get("source") or {}).get("href"),
             },
         })
 

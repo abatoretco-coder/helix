@@ -25,6 +25,7 @@ async def list_articles(
     q = (
         select(Article)
         .outerjoin(ArticleAI, Article.id == ArticleAI.article_id)
+        .where(Article.archived_at.is_(None))
         .order_by(desc(Article.published_at))
         .limit(limit)
         .offset(offset)
@@ -46,7 +47,7 @@ async def list_articles(
 async def get_article(article_id: int, db: AsyncSession = Depends(get_db)):
     q = (
         select(Article)
-        .where(Article.id == article_id)
+        .where(Article.id == article_id, Article.archived_at.is_(None))
         .options(selectinload(Article.ai), selectinload(Article.source))
     )
     result = await db.execute(q)
@@ -62,7 +63,7 @@ async def get_similar_articles(
     limit: int = Query(10, ge=1, le=50),
     db: AsyncSession = Depends(get_db),
 ):
-    article = await db.get(Article, article_id)
+    article = await db.scalar(select(Article).where(Article.id == article_id, Article.archived_at.is_(None)))
     if not article:
         raise HTTPException(404, "Article not found")
 
@@ -82,6 +83,7 @@ async def get_similar_articles(
         JOIN articles a ON a.id = ai.article_id
         LEFT JOIN sources s ON s.id = a.source_id
         WHERE base.article_id = :article_id
+          AND a.archived_at IS NULL
           AND base.embedding IS NOT NULL
           AND ai.embedding IS NOT NULL
         ORDER BY ai.embedding <=> base.embedding
@@ -116,7 +118,7 @@ async def get_similar_articles(
 @router.post("/{article_id}/reprocess", status_code=202)
 async def reprocess_article(article_id: int, db: AsyncSession = Depends(get_db)):
     """Push article back to the AI queue for reprocessing."""
-    article = await db.get(Article, article_id)
+    article = await db.scalar(select(Article).where(Article.id == article_id, Article.archived_at.is_(None)))
     if not article:
         raise HTTPException(404, "Article not found")
     await enqueue("ai", str(article_id))

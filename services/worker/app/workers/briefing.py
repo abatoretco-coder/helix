@@ -13,6 +13,8 @@ from sqlalchemy import desc, func, select
 from sqlalchemy.orm import selectinload
 
 from app.db.models import Article, ArticleAI, Briefing, ExportJob
+from app.ai.pipeline import synthesize_briefing
+from app.policy.relevance import article_decision
 from app.storage.postgres import get_session, log_processing
 from app.storage.redis_queue import dequeue, deserialize_payload, enqueue, enqueue_dead
 from app.utils.logging import get_logger, setup_logging
@@ -110,6 +112,7 @@ def _select_articles(session, period_date: date, category: str) -> list[Article]
         .join(ArticleAI, ArticleAI.article_id == Article.id)
         .options(selectinload(Article.ai), selectinload(Article.source), selectinload(Article.clusters))
         .where(article_date == period_date)
+        .where(Article.archived_at.is_(None))
         .order_by(desc(ArticleAI.final_score), desc(Article.published_at))
         .limit(TOP_ARTICLES_LIMIT)
     )
@@ -117,7 +120,7 @@ def _select_articles(session, period_date: date, category: str) -> list[Article]
     if category != "all":
         q = q.where(ArticleAI.category == category)
 
-    return list(session.execute(q).scalars().all())
+    return [article for article in session.execute(q).scalars().all() if article_decision(article).accepted]
 
 
 def _select_for_briefing(articles: list[Article]) -> tuple[list[Article], list[int]]:
@@ -187,7 +190,24 @@ def _build_markdown(period: str, period_date: date, category: str, articles: lis
             ]
         )
 
-    return "\n".join(lines).strip() + "\n", article_ids
+    source_digest = "\n".join(lines).strip() + "\n"
+    executive_summary = synthesize_briefing(source_digest) if articles else ""
+    if executive_summary:
+        source_section = source_digest.split("## Top News", 1)[-1].strip()
+        content = "\n".join([
+            header,
+            "",
+            f"Date: {period_date.isoformat()}",
+            f"Category: {category}",
+            "",
+            "## Executive Summary",
+            executive_summary.strip(),
+            "",
+            "## Source Digest",
+            source_section,
+        ])
+        return content, article_ids
+    return source_digest, article_ids
 
 
 def _upsert_briefing(session, period: str, period_date: date, category: str, content: str, article_ids: list[int], cluster_ids: list[int]) -> int:

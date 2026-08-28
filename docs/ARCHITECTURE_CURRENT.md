@@ -8,7 +8,6 @@
 - morss
 - freshrss
 - meilisearch
-- ollama
 - api
 - worker_collect
 - worker_extract
@@ -18,6 +17,10 @@
 - worker_cleanup
 - dashboard
 - prometheus
+
+Optional profile:
+
+- ollama (`docker compose --profile ollama up -d ollama`), not required for the default OpenAI-on-demand deployment.
 
 ## Data flow
 

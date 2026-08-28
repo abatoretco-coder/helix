@@ -63,11 +63,19 @@
 - Prune stale raw archives according to policy.
 - Vacuum PostgreSQL when needed.
 
-## Ollama model management
+## AI usage management
 
-- Verify installed models.
-- Pull missing embedding and summary models.
-- Keep parallelism low on constrained NAS hardware.
+- Keep `BACKGROUND_AI_ENABLED=false` unless background OpenAI costs are explicitly accepted.
+- Keep `NEWS_SUMMARY_PROVIDER=local` unless `/v1/news/summary` should call OpenAI.
+- Before giving an agent an OpenAI-capable API key, set global and endpoint caps such as `OPENAI_DAILY_REQUEST_LIMIT=50` and `OPENAI_JARVIS_DAILY_REQUEST_LIMIT=20`.
+- Review `GET /v1/ops/openai-usage?days=30`; it records only explicit API-triggered remote calls, including failed attempts.
+- Use Ollama only as an optional Compose profile on machines with enough resources.
+
+## Network exposure
+
+- PostgreSQL, Redis, MinIO, Meilisearch, morss, and Prometheus are bound to `127.0.0.1` in Compose.
+- Keep the API on the LAN only unless an authenticated reverse proxy is in front of it. Set `API_BIND_ADDRESS=127.0.0.1` when no remote Jarvis client is needed.
+- Leave `CORS_ALLOW_ORIGINS` empty to derive the local and `NAS_IP` dashboard origins, or set it to exact approved origins. Wildcard CORS is intentionally not used.
 
 ## Troubleshooting
 

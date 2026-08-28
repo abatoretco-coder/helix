@@ -49,6 +49,9 @@ class ExtractedArticle:
 
 def try_rss_content(raw_payload: dict) -> Optional[str]:
     """If the RSS feed already included the full article text, return it."""
+    structured = raw_payload.get("structured_content")
+    if isinstance(structured, str) and len(structured.strip()) >= 120:
+        return structured
     content = raw_payload.get("content") or raw_payload.get("summary", "")
     if isinstance(content, list) and content:
         content = content[0].get("value", "")

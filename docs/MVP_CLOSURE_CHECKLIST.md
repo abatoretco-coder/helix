@@ -5,7 +5,8 @@
 - [ ] docker compose config passes
 - [ ] All runtime services start and stay healthy
 - [ ] worker_extract depends on postgres, redis, minio, morss
-- [ ] worker_ai depends on ollama
+- [ ] worker_ai runs without background AI calls when `BACKGROUND_AI_ENABLED=false`
+- [ ] OpenAI calls happen only on explicit endpoint use or when background AI is deliberately enabled
 - [ ] worker_cluster service is enabled
 - [ ] worker_briefing service is enabled
 - [ ] worker_cleanup service is enabled

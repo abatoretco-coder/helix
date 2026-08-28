@@ -41,7 +41,10 @@ def collect_hackernews(source: dict, max_items: int = 50) -> list[dict]:
         ids = r.json()[:max_items]
     except Exception as e:
         log.error("hn_list_fetch_error", error=str(e))
-        return []
+        # An empty, successful listing and a failed listing must not look alike
+        # to the collection worker: the latter needs to increment source health
+        # errors and be retried instead of being recorded as a false success.
+        raise RuntimeError(f"Hacker News listing unavailable: {e}") from e
 
     items = []
     for item_id in ids:

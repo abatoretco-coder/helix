@@ -106,7 +106,6 @@ required_services=(
   minio
   morss
   meilisearch
-  ollama
   api
   freshrss
   worker_collect
@@ -118,6 +117,10 @@ required_services=(
   dashboard
   prometheus
 )
+
+if [ "${INSTALL_OLLAMA:-false}" = "true" ]; then
+  required_services+=(ollama)
+fi
 
 running_services="$(docker compose ps --services --filter status=running)"
 

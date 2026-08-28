@@ -15,7 +15,7 @@ RSS/APIs → Collectors → Raw Items (Redis queue)
                             ↓
                         Articles + MinIO storage
                             ↓
-                        AI Pipeline (Ollama: summarize, classify, embed)
+                        AI Pipeline (OpenAI-compatible provider when enabled)
                             ↓
                         Scoring + Meilisearch index
                             ↓
@@ -27,7 +27,7 @@ RSS/APIs → Collectors → Raw Items (Redis queue)
 - **Queue**: Redis
 - **Storage**: MinIO (raw HTML/JSON)
 - **Search**: Meilisearch
-- **LLM**: Ollama (local, no API key needed)
+- **LLM**: OpenAI-compatible provider for opt-in AI jobs; local extractive news summaries by default; Ollama service included for local model runtime work
 - **API**: FastAPI
 - **Frontend**: Next.js 14
 - **Extraction**: morss → trafilatura → news-please → newspaper4k → playwright
@@ -68,9 +68,9 @@ chmod +x scripts/deploy.sh
 This will:
 1. Build Docker images
 2. Start PostgreSQL, Redis, MinIO, Meilisearch
-3. Start Ollama and pull `nomic-embed-text` + `mistral` models
+3. Skip Ollama by default
 4. Import sources from `awesome-rss-feeds`
-5. Start all workers and services
+5. Start all core workers and services
 
 Wait 5-10 minutes for everything to stabilize.
 
@@ -95,7 +95,7 @@ Wait 5-10 minutes for everything to stabilize.
 | Meilisearch | 7700 | Full-text search |
 | FreshRSS | `${FRESHRSS_PORT:-8080}` | RSS cockpit + UI |
 | morss | 8081 | RSS enrichment proxy |
-| Ollama | 11434 | Local LLM (embeddings, summaries) |
+| Ollama | 11434 | Optional local model runtime, only with `INSTALL_OLLAMA=true` / Compose profile `ollama` |
 | API | 8000 | FastAPI backend |
 | Dashboard | `${DASHBOARD_PORT:-3000}` | Next.js frontend |
 
@@ -195,7 +195,7 @@ curl http://192.168.1.50:8000/articles/123/similar?limit=10
 # Search
 curl http://192.168.1.50:8000/search?q=artificial+intelligence&limit=20
 
-# Semantic search via pgvector/Ollama embeddings
+# Semantic search via pgvector/provider embeddings
 curl http://192.168.1.50:8000/search/semantic?q=artificial+intelligence&limit=20
 
 # Get clusters (same event, multiple sources)
@@ -203,6 +203,15 @@ curl http://192.168.1.50:8000/clusters
 
 # Get daily briefing
 curl http://192.168.1.50:8000/briefings/daily
+
+# Get fresh news items selected for a Jarvis/client view
+curl "http://192.168.1.50:8000/v1/news/items?geoFilter=france&view=breaking&limit=20"
+
+# Generate a short news summary from selected items
+# Defaults to local extractive bullets. Set NEWS_SUMMARY_PROVIDER=openai to use OpenAI.
+curl -X POST http://192.168.1.50:8000/v1/news/summary \
+  -H "Content-Type: application/json" \
+  -d '{"scopeLabel":"France","items":[{"title":"Example 1"},{"title":"Example 2"},{"title":"Example 3"}]}'
 
 # Jarvis mode — question answering
 curl -X POST http://192.168.1.50:8000/jarvis/query \
@@ -221,6 +230,9 @@ Full OpenAPI docs: http://192.168.1.50:8000/docs
 - `POST /v1/agent/tasks`
 - `POST /v1/agent/tasks/claim`
 - `POST /v1/jarvis/query`
+- `GET /v1/news/items`
+- `POST /v1/news/summary`
+- `GET /v1/ops/openai-usage`
 - `GET /v1/articles/{article_id}/similar`
 - `GET /v1/search?q=...`
 - `GET /v1/search/semantic?q=...`
@@ -271,10 +283,11 @@ Additional NAS intelligence endpoints:
 
 ## 🎯 Features
 
-- ✅ **275 curated sources** preconfigured, including 79 French-language sources
+- ✅ **295 curated sources** preconfigured, including 94 French-language sources
 - ✅ **Multi-language** (FR/EN + international) — direct feeds and Google News RSS auto-queries
 - ✅ **Full-text extraction** — 6-layer fallback chain for high success rate
-- ✅ **Local LLM** — Ollama: summaries, classification, entity extraction, embeddings
+- ✅ **Opt-in AI pipeline** — OpenAI-compatible summaries, classification, entity extraction, and embeddings when `BACKGROUND_AI_ENABLED=true`
+- ✅ **Local-first news summary API** — extractive bullets by default, optional OpenAI-compatible provider when explicitly enabled
 - ✅ **Semantic search** — pgvector + IVF index for fast similarity
 - ✅ **Similar articles** — article-to-article recommendations from embeddings
 - ✅ **Event clustering** — auto-groups articles about the same event
@@ -284,7 +297,7 @@ Additional NAS intelligence endpoints:
 - ✅ **Agent API** — structured context and durable memory writeback for external agents
 - ✅ **Versioned API contract** — `/v1/*` endpoints for Jarvis and other clients
 - ✅ **Operational visibility** — pipeline metrics and source status endpoints
-- ✅ **All data local** — nothing leaves your NAS
+- ✅ **Local-first data flow** — ingestion, storage, embeddings, and default news summaries stay on your NAS; optional external summary providers are opt-in
 
 ---
 
@@ -300,6 +313,9 @@ python scripts/import_awesome_feeds.py --output config/sources.yaml --limit 500
 
 # Validate source shape and duplicates
 python scripts/validate_sources.py --strict
+
+# Review freshness, cadence, and coverage recommendations
+python scripts/source_realtime_plan.py --top 20
 ```
 
 Then restart `worker_collect`:
@@ -308,16 +324,22 @@ docker compose restart worker_collect
 ```
 
 See [Source enrichment](docs/SOURCE_ENRICHMENT.md) for coverage details and database sync notes.
+See [News real-time and quality roadmap](docs/NEWS_REALTIME_QUALITY_ROADMAP.md) for the freshness plan.
 
 ---
 
 ## 🔐 Security Notes
 
 - All services listen on localhost only (or your NAS IP)
-- No credentials sent anywhere (Ollama is local)
+- OpenAI is not used in shadow/background mode by default. Keep `BACKGROUND_AI_ENABLED=false` to prevent article-ingestion AI calls.
+- Explicit OpenAI calls are persisted in `/v1/ops/openai-usage`; set `OPENAI_*_REQUEST_LIMIT` before granting a key to a client with frequent queries.
+- No news summary content leaves the NAS by default. `/v1/news/summary` uses local extractive bullets unless `NEWS_SUMMARY_PROVIDER=openai` is set.
+- When `NEWS_SUMMARY_PROVIDER=openai`, selected titles/snippets submitted to `/v1/news/summary` are sent to the configured OpenAI-compatible endpoint.
+- Jarvis answers and semantic search can call OpenAI only when their endpoints are explicitly requested and `OPENAI_API_KEY` is configured.
 - Meilisearch has a master key — set it in `.env`
 - PostgreSQL password should be strong
 - MinIO (S3-like) has separate root key
+- PostgreSQL, Redis, MinIO, Meilisearch, morss, and Prometheus bind to `127.0.0.1` by default; only expose a service deliberately through a reverse proxy or a dedicated bind setting.
 
 ## 🗃️ Database Migrations (Alembic)
 
@@ -397,11 +419,11 @@ docker compose restart worker_cluster
 docker compose restart worker_briefing
 ```
 
-**Ollama models not downloaded?**
+**Optional Ollama local runtime?**
 ```bash
-docker compose exec ollama ollama list
-docker compose exec ollama ollama pull nomic-embed-text
-docker compose exec ollama ollama pull mistral
+INSTALL_OLLAMA=true ./scripts/deploy.sh
+# or:
+docker compose --profile ollama up -d ollama
 ```
 
 **Out of disk space?**
@@ -417,7 +439,7 @@ du -sh data/*
 - [Repository analysis and applied roadmap](docs/REPOSITORY_ANALYSIS_AND_ROADMAP.md)
 - [Agent API architecture](docs/AGENT_API_ARCHITECTURE.md)
 - [Trafilatura](https://trafilatura.readthedocs.io) — extraction
-- [Ollama](https://ollama.ai) — local LLM
+- [Ollama](https://ollama.ai) — local model runtime
 - [Meilisearch](https://meilisearch.com/docs) — search
 - [FastAPI](https://fastapi.tiangolo.com) — API
 - [Next.js 14](https://nextjs.org) — frontend

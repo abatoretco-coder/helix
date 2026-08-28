@@ -1,0 +1,222 @@
+# Admission policy for the active Helix workflow.
+# Catalogue sources remain in sources.yaml; this file determines which ones are
+# allowed to consume network, extraction and Ollama capacity.
+enabled: true
+max_candidate_age_days: 7
+
+# Google News is useful for manual discovery, but its RSS links are relays
+# that resolve to consent pages in the current collector.  It must never feed
+# the production extraction or briefing pipeline.
+block_source_types:
+  - google_news_rss
+
+# Sources suspended after the factual/commercial viability audit.  Their feeds
+# are mixed with retail and deal content at a rate incompatible with Helix.
+block_sources:
+  - Futura Sciences
+  - Clubic
+
+# Broad world-news, recommendation and leisure feeds created most of the load
+# while contributing little to the stated AI/logistics/regulation watchlist.
+block_categories:
+  - countries
+  - recommended
+  - general
+  - travel
+
+allow_categories:
+  - ai
+  - tech
+  - science
+  - supply_chain
+  - pharma
+  - climate
+  - cybersecurity
+  - startups
+  - regulation
+  - geopolitics
+  - finance
+
+# Broad but useful domains are admitted only when title or snippet matches one
+# of the monitored subjects. Dedicated category feeds are admitted directly.
+keyword_required_categories:
+  - tech
+  - science
+  - geopolitics
+  - regulation
+  - finance
+
+relevance_terms:
+  - ai
+  - artificial intelligence
+  - llm
+  - large language model
+  - openai
+  - anthropic
+  - mistral
+  - gemini
+  - ollama
+  - agent
+  - robotics
+  - cybersecurity
+  - cyberattack
+  - botnet
+  - vulnerability
+  - exploit
+  - kaspersky
+  - connected vehicle
+  - connected vehicles
+  - vehicule connecte
+  - vehicules connectes
+  - voiture connectee
+  - voitures connectees
+  - head unit
+  - ransomware
+  - supply chain
+  - logistics
+  - warehouse
+  - freight
+  - transport
+  - pharma
+  - pharmaceutical
+  - clinical trial
+  - carbon
+  - decarbon
+  - climate
+  - regulation
+  - ai act
+  - european union
+  - startup
+  - saas
+  - docker
+  - kubernetes
+  - gdp
+  - inflation
+  - trade
+  # France: electoral and public-policy signals.
+  - election
+  - elections
+  - electoral
+  - electorale
+  - electeur
+  - presidentielle
+  - legislatives
+  - municipales
+  - referendum
+  - vote
+  - scrutin
+  - gouvernement
+  - assemblee nationale
+  - senat
+  - conseil constitutionnel
+  - taxe
+  - fiscal
+  - budget
+  - dette publique
+  - deficit
+  - emploi
+  - chomage
+  - salaire
+  - pouvoir d'achat
+  - marche public
+  - facturation electronique
+  # International relations and macroeconomics.
+  - ukraine
+  - russie
+  - russia
+  - iran
+  - israel
+  - palestine
+  - chine
+  - china
+  - taiwan
+  - otan
+  - nato
+  - nations unies
+  - united nations
+  - sanctions
+  - ceasefire
+  - cessez-le-feu
+  - conflict
+  - conflit
+  - humanitarian
+  - humanitaire
+  - food security
+  - securite alimentaire
+  - banque centrale
+  - central bank
+  - ecb
+  - taux directeur
+  - interest rate
+  - monetary policy
+  - politique monetaire
+
+# Commercial-content guardrail.  This is deliberately deterministic and runs
+# before extraction and before any local-model request.  It targets material
+# that is *itself* promotional (sponsored posts, affiliate deals, buying
+# guides), not reporting about advertising, products or regulation.
+advertising_filter:
+  enabled: true
+  block_source_terms:
+    - sponsored
+    - advertorial
+    - affiliate
+    - shopping deals
+    - coupon
+    - bons plans
+    - code promo
+  block_url_patterns:
+    - "/sponsored/"
+    - "/advertorial/"
+    - "/partner-content/"
+    - "/brand-studio/"
+    - "/affiliate/"
+  disclosure_terms:
+    - "sponsored content"
+    - "paid content"
+    - "paid post"
+    - "brand partner"
+    - "presented by"
+    - "in partnership with"
+    - "advertorial"
+    - "affiliate links"
+    - "this post contains affiliate"
+    - "contenu sponsorise"
+    - "article sponsorise"
+    - "publireportage"
+    - "contenu de marque"
+    - "en partenariat avec"
+    - "lien affilie"
+    - "liens affilies"
+  promotional_terms:
+    - "buy now"
+    - "shop now"
+    - "limited time offer"
+    - "promo code"
+    - "coupon code"
+    - "free shipping"
+    - "black friday"
+    - "cyber monday"
+    - "% off"
+    - "acheter maintenant"
+    - "offre limitee"
+    - "offre a duree limitee"
+    - "fait un carton sur amazon"
+    - "en promo sur amazon"
+    - "code promo"
+    - "bon plan"
+    - "meilleur prix"
+    - "livraison gratuite"
+  promotional_patterns:
+    - '\b(top|best) \d+ .*\b(to buy|for sale)\b'
+    - '\b\d+ (best|top) .*\b(to buy|for sale)\b'
+    - '\b(meilleurs?|top) \d+ .*\b(a acheter|en promotion)\b'
+    # Helix is an intelligence feed, not a product-review feed.  These
+    # editorial buying guides can lack an affiliate disclosure but still have
+    # no enduring informational value for Jarvis.
+    - '\b(?:best|top|meilleurs?)\b.{0,80}\b(?:camera|cameras|smartphone|laptop|notebook|notebooks|pen|pens|headphones?|tv|television|electric bike|velo electrique|sonnette|robot|gadget)s?\b'
+    - '\b(?:review|test|hands-on)\b.{0,80}\b(?:camera|smartphone|laptop|notebook|headphones?|tv|television|electric bike|velo electrique|sonnette|robot|gadget)s?\b'
+    # A price drop attached to a retail marketplace is commercial content,
+    # even if the source publishes science or technology reporting elsewhere.
+    - '\b(?:amazon|cdiscount|fnac|darty|boulanger)\b.{0,90}\b(?:-\s?\d{1,3}\s?%|remise de \d+\s?%|baisse de \d+\s?€)'
+    - '\b(?:-\s?\d{1,3}\s?%|remise de \d+\s?%|baisse de \d+\s?€).{0,90}\b(?:amazon|cdiscount|fnac|darty|boulanger)\b'

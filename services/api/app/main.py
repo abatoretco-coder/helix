@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
@@ -29,6 +30,13 @@ from app.routes import (
 from app.security import require_api_token
 
 
+def _cors_origins() -> list[str]:
+    configured = os.environ.get("CORS_ALLOW_ORIGINS", "").strip()
+    if configured:
+        return [origin.strip() for origin in configured.split(",") if origin.strip()]
+    return ["http://localhost:3000", "http://localhost:13000"]
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     await init_db()
@@ -44,7 +52,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # local network only — tighten if exposed externally
+    allow_origins=_cors_origins(),
     allow_methods=["*"],
     allow_headers=["*"],
 )

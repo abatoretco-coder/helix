@@ -2420,7 +2420,7 @@ sources:
   language: fr
   country: FR
   priority: 3
-  refresh_minutes: 45
+  refresh_minutes: 120
   extraction_strategy: rss_then_article
   enabled: true
 - name: Google News - Transition Energetique France
@@ -2500,7 +2500,7 @@ sources:
   language: fr
   country: FR
   priority: 3
-  refresh_minutes: 45
+  refresh_minutes: 120
   extraction_strategy: rss_then_article
   enabled: true
 - name: Google News - Defense Innovation France
@@ -2570,7 +2570,7 @@ sources:
   language: fr
   country: FR
   priority: 3
-  refresh_minutes: 45
+  refresh_minutes: 120
   extraction_strategy: rss_then_article
   enabled: true
 - name: Google News - Crypto MiCA Europe
@@ -2590,7 +2590,7 @@ sources:
   language: fr
   country: FR
   priority: 3
-  refresh_minutes: 45
+  refresh_minutes: 120
   extraction_strategy: rss_then_article
   enabled: true
 - name: Google News - Secteur Public IA France
@@ -2600,7 +2600,7 @@ sources:
   language: fr
   country: FR
   priority: 3
-  refresh_minutes: 45
+  refresh_minutes: 120
   extraction_strategy: rss_then_article
   enabled: true
 - name: Google News - Medias IA France
@@ -2610,7 +2610,7 @@ sources:
   language: fr
   country: FR
   priority: 3
-  refresh_minutes: 45
+  refresh_minutes: 120
   extraction_strategy: rss_then_article
   enabled: true
 - name: Google News - Emploi IA France
@@ -2620,7 +2620,7 @@ sources:
   language: fr
   country: FR
   priority: 3
-  refresh_minutes: 45
+  refresh_minutes: 120
   extraction_strategy: rss_then_article
   enabled: true
 - name: Google News - AI Safety Regulation
@@ -2742,4 +2742,327 @@ sources:
   priority: 3
   refresh_minutes: 120
   extraction_strategy: reddit
+  enabled: true
+
+- name: Google News - Alerte Info France
+  type: google_news_rss
+  query: alerte info France
+  category: general
+  language: fr
+  country: FR
+  priority: 1
+  refresh_minutes: 15
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Derniere Heure France
+  type: google_news_rss
+  query: derniere heure France actualite
+  category: general
+  language: fr
+  country: FR
+  priority: 1
+  refresh_minutes: 15
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Breaking France Monde
+  type: google_news_rss
+  query: breaking news France monde
+  category: geopolitics
+  language: fr
+  country: FR
+  priority: 1
+  refresh_minutes: 15
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Gouvernement France Annonce
+  type: google_news_rss
+  query: gouvernement France annonce
+  category: regulation
+  language: fr
+  country: FR
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Assemblee Nationale Loi
+  type: google_news_rss
+  query: Assemblee nationale loi France
+  category: regulation
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Crise Energie France
+  type: google_news_rss
+  query: crise energie France prix electricite gaz
+  category: climate
+  language: fr
+  country: FR
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Industrie France Usine
+  type: google_news_rss
+  query: industrie France usine emploi investissement
+  category: finance
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Rappel Produit France
+  type: google_news_rss
+  query: rappel produit France consommation
+  category: general
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Greve Transport France
+  type: google_news_rss
+  query: greve transport France SNCF RATP aeroport
+  category: supply_chain
+  language: fr
+  country: FR
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Port Maritime France
+  type: google_news_rss
+  query: port maritime France fret blocage
+  category: supply_chain
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Startup IA Europe
+  type: google_news_rss
+  query: startup IA Europe levee fonds
+  category: startups
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Acquisition Tech France
+  type: google_news_rss
+  query: acquisition tech France startup entreprise
+  category: startups
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 45
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Fuite Donnees France
+  type: google_news_rss
+  query: fuite de donnees France cybersecurite
+  category: cybersecurity
+  language: fr
+  country: FR
+  priority: 1
+  refresh_minutes: 15
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Ransomware France
+  type: google_news_rss
+  query: ransomware France hopital entreprise collectivite
+  category: cybersecurity
+  language: fr
+  country: FR
+  priority: 1
+  refresh_minutes: 15
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Zero Day Exploite
+  type: google_news_rss
+  query: zero day exploite activement
+  category: cybersecurity
+  language: fr
+  country: FR
+  priority: 1
+  refresh_minutes: 15
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - AI Agents Enterprise
+  type: google_news_rss
+  query: AI agents enterprise automation
+  category: ai
+  language: en
+  country: US
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - OpenAI API
+  type: google_news_rss
+  query: OpenAI API release pricing
+  category: ai
+  language: en
+  country: US
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Anthropic Claude
+  type: google_news_rss
+  query: Anthropic Claude model release
+  category: ai
+  language: en
+  country: US
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Google Gemini
+  type: google_news_rss
+  query: Google Gemini model release
+  category: ai
+  language: en
+  country: US
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Google News - Nvidia AI Chips
+  type: google_news_rss
+  query: Nvidia AI chips supply
+  category: tech
+  language: en
+  country: US
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: rss_then_article
+  enabled: true
+
+# ── Public structured APIs: factual signals, not scraped news ───────────────
+- name: CISA Known Exploited Vulnerabilities
+  type: cisa_kev
+  url: https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json
+  category: cybersecurity
+  language: en
+  country: US
+  priority: 1
+  refresh_minutes: 60
+  extraction_strategy: rss
+  enabled: true
+- name: GitHub Global Security Advisories
+  type: github_advisories
+  url: https://api.github.com/advisories
+  category: cybersecurity
+  language: en
+  country: global
+  priority: 1
+  refresh_minutes: 60
+  extraction_strategy: rss
+  enabled: true
+- name: GitHub Releases - Ollama
+  type: github_releases
+  query: ollama/ollama
+  category: tech
+  language: en
+  country: global
+  priority: 1
+  refresh_minutes: 120
+  extraction_strategy: rss
+  enabled: true
+- name: GitHub Releases - Docker
+  type: github_releases
+  query: docker/compose
+  category: tech
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 120
+  extraction_strategy: rss
+  enabled: true
+- name: OpenAlex - AI research
+  type: openalex
+  url: https://api.openalex.org/works
+  query: artificial intelligence
+  category: ai
+  language: en
+  country: global
+  priority: 2
+  refresh_minutes: 360
+  extraction_strategy: rss
+  enabled: true
+- name: OpenAlex - Supply chain research
+  type: openalex
+  url: https://api.openalex.org/works
+  query: supply chain logistics
+  category: supply_chain
+  language: en
+  country: global
+  priority: 3
+  refresh_minutes: 360
+  extraction_strategy: rss
+  enabled: true
+- name: Eurostat - EU GDP
+  type: eurostat
+  url: https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nama_10_gdp?geo=EU27_2020&lastTimePeriod=1
+  category: finance
+  language: en
+  country: EU
+  priority: 2
+  refresh_minutes: 720
+  extraction_strategy: rss
+  enabled: true
+
+# ── Public institutions: primary news and policy signals ───────────────────
+# These are deliberately first-party feeds.  They are collected as articles,
+# then must pass the relevance and advertising gates before Ollama is used.
+- name: United Nations News
+  type: rss
+  url: https://news.un.org/feed/subscribe/en/news/all/rss.xml
+  category: geopolitics
+  language: en
+  country: global
+  priority: 1
+  refresh_minutes: 30
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: European Central Bank Press Releases
+  type: rss
+  url: https://www.ecb.europa.eu/rss/press.html
+  category: finance
+  language: en
+  country: EU
+  priority: 1
+  refresh_minutes: 60
+  extraction_strategy: rss_then_article
+  enabled: true
+- name: Service-Public Entreprises
+  type: rss
+  url: https://www.service-public.fr/abonnements/rss/actu-actu-pro.rss
+  category: regulation
+  language: fr
+  country: FR
+  priority: 2
+  refresh_minutes: 180
+  extraction_strategy: rss_then_article
+  enabled: true
+
+# Official election results are a reference data source.  A new event is only
+# emitted when the Ministry-published dataset itself changes; it never becomes
+# an uncontextualised Flash Info headline.
+- name: data.gouv.fr - Résultats électoraux agrégés
+  type: datagouv_dataset
+  url: https://www.data.gouv.fr/api/1/datasets/donnees-des-elections-agregees/
+  category: regulation
+  language: fr
+  country: FR
+  priority: 1
+  refresh_minutes: 360
+  extraction_strategy: rss
   enabled: true

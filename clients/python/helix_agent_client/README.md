@@ -33,6 +33,7 @@ helix = HelixAgentClient()
 
 context = helix.context(mode="top", language="fr", limit=10)
 answer = helix.ask("Quels sont les signaux faibles importants aujourd'hui ?", language="fr")
+breaking = helix.news_items(view="breaking", geo_filter="france", limit=10)
 
 helix.create_memory(
     memory_type="synthesis",
@@ -84,3 +85,5 @@ Jarvis is the reasoning client:
 - read prior syntheses with `GET /v1/agent/memories`.
 - claim persistent work with `POST /v1/agent/tasks/claim`.
 - complete or fail tasks with result payloads and optional memory writeback.
+- retrieve freshness-aware selected news with `GET /v1/news/items`.
+- retrieve auditable explicit OpenAI usage with `GET /v1/ops/openai-usage`.

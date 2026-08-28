@@ -95,6 +95,7 @@ class Article(Base):
     raw_html_path     = Column(Text)
     raw_json_path     = Column(Text)
     extraction_status = Column(Text, default="success")
+    archived_at       = Column(DateTime)
     created_at        = Column(DateTime, server_default=func.now())
     updated_at        = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
@@ -183,6 +184,27 @@ class ProcessingLog(Base):
     payload     = Column(JSONB)
     duration_ms = Column(Integer)
     created_at  = Column(DateTime, server_default=func.now())
+
+
+class OpenAIUsageEvent(Base):
+    """Auditable record for explicit, user-triggered OpenAI calls."""
+
+    __tablename__ = "openai_usage_events"
+
+    id = Column(BigInteger, primary_key=True)
+    endpoint = Column(Text, nullable=False)
+    operation = Column(Text, nullable=False)
+    model = Column(Text, nullable=False)
+    status = Column(Text, nullable=False, default="pending")
+    input_tokens = Column(Integer)
+    output_tokens = Column(Integer)
+    error_message = Column(Text)
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
+    completed_at = Column(DateTime)
+
+
+Index("ix_openai_usage_events_endpoint_created", OpenAIUsageEvent.endpoint, OpenAIUsageEvent.created_at)
+Index("ix_openai_usage_events_created", OpenAIUsageEvent.created_at)
 
 
 class UserProfile(Base):

@@ -14,7 +14,7 @@ services:
       - ./data/postgres:/var/lib/postgresql/data
       - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
     ports:
-      - "${POSTGRES_PORT:-15432}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-15432}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U news -d newsdb"]
       interval: 10s
@@ -27,7 +27,7 @@ services:
     restart: unless-stopped
     command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -45,8 +45,8 @@ services:
     volumes:
       - ./data/minio:/data
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
       interval: 30s
@@ -65,7 +65,7 @@ services:
     volumes:
       - ./data/meili:/meili_data
     ports:
-      - "7700:7700"
+      - "127.0.0.1:7700:7700"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
       interval: 20s
@@ -79,7 +79,7 @@ services:
     container_name: news_morss
     restart: unless-stopped
     ports:
-      - "8081:8080"
+      - "127.0.0.1:8081:8080"
     # morss enriches RSS feeds on-the-fly via HTTP proxying:
     #   http://morss:8080/http://feeds.example.com/rss
     # Workers call morss for sources with extraction_strategy: morss
@@ -99,28 +99,6 @@ services:
       TZ: Europe/Paris
     ports:
       - "${FRESHRSS_PORT:-8082}:80"
-
-  # ── Local LLM ─────────────────────────────────────────────────────────────
-
-  ollama:
-    image: ollama/ollama:latest
-    container_name: news_ollama
-    profiles: ["ollama"]
-    restart: unless-stopped
-    mem_limit: ${OLLAMA_MEMORY_LIMIT:-2g}
-    memswap_limit: ${OLLAMA_MEMORY_SWAP_LIMIT:-6g}
-    volumes:
-      - ./data/ollama:/root/.ollama
-    ports:
-      - "11434:11434"
-    # Uncomment if you have a GPU:
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
 
   # ── Backend API ───────────────────────────────────────────────────────────
 
@@ -147,21 +125,36 @@ services:
       HOME_ASSISTANT_WEBHOOK_URL: ${HOME_ASSISTANT_WEBHOOK_URL:-}
       HOME_ASSISTANT_WEBHOOK_TOKEN: ${HOME_ASSISTANT_WEBHOOK_TOKEN:-}
       LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      NEWS_SUMMARY_PROVIDER: ${NEWS_SUMMARY_PROVIDER:-local}
       BACKGROUND_AI_ENABLED: ${BACKGROUND_AI_ENABLED:-false}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+      NEWS_SUMMARY_MODEL: ${NEWS_SUMMARY_MODEL:-gpt-4.1-mini}
       OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      OLLAMA_EMBEDDING_MODEL: ${OLLAMA_EMBEDDING_MODEL:-nomic-embed-text}
       EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-768}
       LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-30}
+      JARVIS_OUTPUT_TOKENS: ${JARVIS_OUTPUT_TOKENS:-420}
+      NEWS_SUMMARY_TIMEOUT_SECONDS: ${NEWS_SUMMARY_TIMEOUT_SECONDS:-30}
+      OPENAI_DAILY_REQUEST_LIMIT: ${OPENAI_DAILY_REQUEST_LIMIT:-0}
+      OPENAI_MONTHLY_REQUEST_LIMIT: ${OPENAI_MONTHLY_REQUEST_LIMIT:-0}
+      OPENAI_NEWS_SUMMARY_DAILY_REQUEST_LIMIT: ${OPENAI_NEWS_SUMMARY_DAILY_REQUEST_LIMIT:-0}
+      OPENAI_JARVIS_DAILY_REQUEST_LIMIT: ${OPENAI_JARVIS_DAILY_REQUEST_LIMIT:-0}
+      OPENAI_SEMANTIC_SEARCH_DAILY_REQUEST_LIMIT: ${OPENAI_SEMANTIC_SEARCH_DAILY_REQUEST_LIMIT:-0}
+      CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS:-http://localhost:3000,http://localhost:13000,http://${NAS_IP:-localhost}:${DASHBOARD_PORT:-13000}}
       MINIO_ENDPOINT: minio:9000
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       APP_ENV: production
     ports:
-      - "8000:8000"
+      - "${API_BIND_ADDRESS:-0.0.0.0}:8000:8000"
     volumes:
       - ./config:/app/config:ro
+    networks:
+      - default
+      - jarvis_ai_runtime
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 20s
@@ -186,6 +179,9 @@ services:
       DATABASE_URL: postgresql+asyncpg://news:${POSTGRES_PASSWORD}@postgres:5432/newsdb
       REDIS_URL: redis://redis:6379/0
       SOURCES_PATH: /app/config/sources.yaml
+      COLLECT_ACTIVE_SLEEP_SECONDS: ${COLLECT_ACTIVE_SLEEP_SECONDS:-20}
+      COLLECT_IDLE_SLEEP_SECONDS: ${COLLECT_IDLE_SLEEP_SECONDS:-45}
+      COLLECT_MAX_DUE_SOURCES: ${COLLECT_MAX_DUE_SOURCES:-0}
       APP_ENV: production
     volumes:
       - ./config:/app/config:ro
@@ -218,6 +214,7 @@ services:
       EXTRACT_RETRY_BACKOFF_SECONDS: ${EXTRACT_RETRY_BACKOFF_SECONDS:-300}
       EXTRACT_RETRY_MAX_BACKOFF_SECONDS: ${EXTRACT_RETRY_MAX_BACKOFF_SECONDS:-3600}
       EXTRACT_RETRY_SCAN_LIMIT: ${EXTRACT_RETRY_SCAN_LIMIT:-25}
+      AI_QUEUE_MAX_PENDING: ${AI_QUEUE_MAX_PENDING:-50}
       APP_ENV: production
 
   # ── AI worker ─────────────────────────────────────────────────────────────
@@ -240,13 +237,25 @@ services:
       DATABASE_URL: postgresql+asyncpg://news:${POSTGRES_PASSWORD}@postgres:5432/newsdb
       REDIS_URL: redis://redis:6379/0
       LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      NEWS_SUMMARY_PROVIDER: ${NEWS_SUMMARY_PROVIDER:-local}
       BACKGROUND_AI_ENABLED: ${BACKGROUND_AI_ENABLED:-false}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+      NEWS_SUMMARY_MODEL: ${NEWS_SUMMARY_MODEL:-gpt-4.1-mini}
       OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      OLLAMA_EMBEDDING_MODEL: ${OLLAMA_EMBEDDING_MODEL:-nomic-embed-text}
       EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-768}
       LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-30}
+      ARTICLE_OUTPUT_TOKENS: ${ARTICLE_OUTPUT_TOKENS:-320}
+      AI_BACKFILL_ENABLED: ${AI_BACKFILL_ENABLED:-false}
+      AI_BACKFILL_REFRESH_EXISTING: ${AI_BACKFILL_REFRESH_EXISTING:-false}
+      AI_BACKFILL_BATCH_SIZE: ${AI_BACKFILL_BATCH_SIZE:-20}
+      AI_QUEUE_MAX_PENDING: ${AI_QUEUE_MAX_PENDING:-50}
+      AI_PENDING_REFILL_BATCH_SIZE: ${AI_PENDING_REFILL_BATCH_SIZE:-10}
+      AI_PENDING_REFILL_ENABLED: ${AI_PENDING_REFILL_ENABLED:-true}
+      NEWS_SUMMARY_TIMEOUT_SECONDS: ${NEWS_SUMMARY_TIMEOUT_SECONDS:-30}
       MEILI_URL: http://meilisearch:7700
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
       SOURCES_PATH: /app/config/sources.yaml
@@ -255,6 +264,9 @@ services:
       APP_ENV: production
     volumes:
       - ./config:/app/config:ro
+    networks:
+      - default
+      - jarvis_ai_runtime
 
   # ── Cluster worker ────────────────────────────────────────────────────────
 
@@ -274,13 +286,17 @@ services:
       DATABASE_URL: postgresql+asyncpg://news:${POSTGRES_PASSWORD}@postgres:5432/newsdb
       REDIS_URL: redis://redis:6379/0
       LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      NEWS_SUMMARY_PROVIDER: ${NEWS_SUMMARY_PROVIDER:-local}
       BACKGROUND_AI_ENABLED: ${BACKGROUND_AI_ENABLED:-false}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+      NEWS_SUMMARY_MODEL: ${NEWS_SUMMARY_MODEL:-gpt-4.1-mini}
       OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
       EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-768}
       LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-30}
+      NEWS_SUMMARY_TIMEOUT_SECONDS: ${NEWS_SUMMARY_TIMEOUT_SECONDS:-30}
       CLUSTER_SIMILARITY_THRESHOLD: ${CLUSTER_SIMILARITY_THRESHOLD:-0.88}
       CLUSTER_WINDOW_HOURS: ${CLUSTER_WINDOW_HOURS:-72}
       APP_ENV: production
@@ -305,18 +321,23 @@ services:
       DATABASE_URL: postgresql+asyncpg://news:${POSTGRES_PASSWORD}@postgres:5432/newsdb
       REDIS_URL: redis://redis:6379/0
       LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      NEWS_SUMMARY_PROVIDER: ${NEWS_SUMMARY_PROVIDER:-local}
       BACKGROUND_AI_ENABLED: ${BACKGROUND_AI_ENABLED:-false}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+      NEWS_SUMMARY_MODEL: ${NEWS_SUMMARY_MODEL:-gpt-4.1-mini}
       OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
       EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-768}
       LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-30}
+      NEWS_SUMMARY_TIMEOUT_SECONDS: ${NEWS_SUMMARY_TIMEOUT_SECONDS:-30}
       DAILY_BRIEFING_ENABLED: ${DAILY_BRIEFING_ENABLED:-true}
       DAILY_BRIEFING_TIMEZONE: ${DAILY_BRIEFING_TIMEZONE:-Europe/Paris}
       DAILY_BRIEFING_HOUR: ${DAILY_BRIEFING_HOUR:-7}
       DAILY_BRIEFING_MINUTE: ${DAILY_BRIEFING_MINUTE:-30}
       DAILY_BRIEFING_CATEGORY: ${DAILY_BRIEFING_CATEGORY:-all}
+      BRIEFING_LANGUAGE: ${BRIEFING_LANGUAGE:-fr}
       BRIEFING_TICK_SECONDS: ${BRIEFING_TICK_SECONDS:-30}
       OBSIDIAN_EXPORT_ENABLED: ${OBSIDIAN_EXPORT_ENABLED:-false}
       OBSIDIAN_EXPORT_PATH: ${OBSIDIAN_EXPORT_PATH:-/app/exports/obsidian}
@@ -341,6 +362,8 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql+asyncpg://news:${POSTGRES_PASSWORD}@postgres:5432/newsdb
+      MEILI_URL: http://meilisearch:7700
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
       CLEANUP_INTERVAL_SECONDS: ${CLEANUP_INTERVAL_SECONDS:-3600}
       PROCESSING_LOG_RETENTION_DAYS: ${PROCESSING_LOG_RETENTION_DAYS:-30}
       RAW_ITEM_RETENTION_DAYS: ${RAW_ITEM_RETENTION_DAYS:-14}
@@ -350,7 +373,13 @@ services:
       MINIO_RETENTION_ENABLED: ${MINIO_RETENTION_ENABLED:-true}
       RAW_HTML_RETENTION_DAYS: ${RAW_HTML_RETENTION_DAYS:-90}
       RAW_JSON_RETENTION_DAYS: ${RAW_JSON_RETENTION_DAYS:-365}
+      ARTICLE_ARCHIVE_ENABLED: ${ARTICLE_ARCHIVE_ENABLED:-true}
+      ARTICLE_ARCHIVE_DAYS: ${ARTICLE_ARCHIVE_DAYS:-30}
       APP_ENV: production
+    volumes:
+      # Cleanup applies the same admission policy as collect, extract, AI and
+      # briefing. Without this mount it silently runs with policy_disabled.
+      - ./config:/app/config:ro
 
   # ── Dashboard ─────────────────────────────────────────────────────────────
 
@@ -388,10 +417,16 @@ services:
       - ./monitoring/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
       - prometheus_data:/prometheus
     ports:
-      - "${PROMETHEUS_PORT:-19090}:9090"
+      - "${PROMETHEUS_BIND_ADDRESS:-127.0.0.1}:${PROMETHEUS_PORT:-19090}:9090"
     depends_on:
       api:
         condition: service_started
 
 volumes:
   prometheus_data:
+
+networks:
+  # Created by the Jarvis stack; Helix only joins it.
+  jarvis_ai_runtime:
+    external: true
+    name: jarvis_ai_runtime

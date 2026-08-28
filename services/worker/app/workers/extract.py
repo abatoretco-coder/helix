@@ -16,14 +16,16 @@ from __future__ import annotations
 import os
 import time
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urlparse
 
 from sqlalchemy import select
 
 from app.db.models import RawItem, Article
 from app.extractors.article import extract_article
 from app.storage.postgres import get_session, mark_raw_item_status, log_processing
-from app.storage.redis_queue import dequeue, deserialize_payload, enqueue, enqueue_dead
+from app.storage.redis_queue import dequeue, deserialize_payload, enqueue, enqueue_dead, queue_size
 from app.storage.minio import store_raw_html, store_raw_json
+from app.policy.relevance import item_decision
 from app.utils.hashing import hash_content
 from app.utils.logging import get_logger, setup_logging
 
@@ -33,8 +35,10 @@ EXTRACT_MAX_RETRIES = int(os.environ.get("EXTRACT_MAX_RETRIES", "3"))
 EXTRACT_RETRY_BACKOFF_SECONDS = int(os.environ.get("EXTRACT_RETRY_BACKOFF_SECONDS", "300"))
 EXTRACT_RETRY_MAX_BACKOFF_SECONDS = int(os.environ.get("EXTRACT_RETRY_MAX_BACKOFF_SECONDS", "3600"))
 EXTRACT_RETRY_SCAN_LIMIT = int(os.environ.get("EXTRACT_RETRY_SCAN_LIMIT", "25"))
+EXTRACT_NEW_RECOVERY_BATCH_SIZE = int(os.environ.get("EXTRACT_NEW_RECOVERY_BATCH_SIZE", "25"))
 LOW_POWER_MODE = os.environ.get("LOW_POWER_MODE", "false").lower() in {"1", "true", "yes", "on"}
 WORKER_RATE_LIMIT_MS = int(os.environ.get("EXTRACT_WORKER_RATE_LIMIT_MS", os.environ.get("WORKER_RATE_LIMIT_MS", "0")))
+AI_QUEUE_MAX_PENDING = max(1, int(os.environ.get("AI_QUEUE_MAX_PENDING", "50")))
 
 
 def _decode_retry_payload(raw: str) -> tuple[str, int]:
@@ -93,6 +97,39 @@ def _enqueue_due_retries() -> int:
         return len(rows)
 
 
+def _recover_committed_new_items() -> int:
+    """Recover rows committed before a Redis hand-off was interrupted.
+
+    This specifically repairs the former collect-before-commit race.  It only
+    handles `new` records, applies the current admission policy again, and
+    marks the row before enqueueing because the raw row is already committed.
+    """
+    with get_session() as session:
+        rows = (
+            session.execute(
+                select(RawItem)
+                .where(RawItem.status == "new")
+                .order_by(RawItem.created_at.asc())
+                .limit(EXTRACT_NEW_RECOVERY_BATCH_SIZE)
+            )
+            .scalars()
+            .all()
+        )
+        accepted_ids: list[int] = []
+        for raw_item in rows:
+            decision = item_decision(raw_item.source, raw_item.title, raw_item.snippet, raw_item.published_at)
+            if decision.accepted:
+                raw_item.status = "queued_for_extraction"
+                accepted_ids.append(int(raw_item.id))
+            else:
+                mark_raw_item_status(session, raw_item.id, "filtered_out", decision.reason)
+        if accepted_ids:
+            log.info("extract_new_recovery_claimed", count=len(accepted_ids))
+    for raw_item_id in accepted_ids:
+        enqueue("extract", str(raw_item_id))
+    return len(accepted_ids)
+
+
 def _compute_quality_score(article) -> float:
     """Quick quality heuristic — mirrors scoring_rules.yaml logic."""
     score = 0.0
@@ -119,7 +156,14 @@ def _compute_quality_score(article) -> float:
     return min(score, 100.0)
 
 
+def _is_google_news_relay(url: str) -> bool:
+    """Google News RSS links often resolve to consent/relay pages, not news."""
+    parsed = urlparse(url)
+    return parsed.netloc.endswith("news.google.com") and parsed.path.startswith("/rss/articles/")
+
+
 def _process_item(raw_item_id: int) -> None:
+    ai_article_id: int | None = None
     with get_session() as session:
         raw_item = session.get(RawItem, raw_item_id)
         if not raw_item:
@@ -130,6 +174,13 @@ def _process_item(raw_item_id: int) -> None:
         if raw_item.status in ("extracted", "ai_processed", "duplicate"):
             return
 
+        admission = item_decision(raw_item.source, raw_item.title, raw_item.snippet, raw_item.published_at)
+        if not admission.accepted:
+            mark_raw_item_status(session, raw_item.id, "filtered_out", admission.reason)
+            log_processing(session, "raw_item", raw_item.id, "extract", "skip", admission.reason)
+            log.info("extract_filtered", raw_item_id=raw_item.id, reason=admission.reason)
+            return
+
         t0 = time.monotonic()
         url  = raw_item.url
         strat = "article"
@@ -138,6 +189,16 @@ def _process_item(raw_item_id: int) -> None:
         use_playwright = strat in ("playwright", "js", "browser")
 
         mark_raw_item_status(session, raw_item.id, "queued_for_extraction")
+
+        # Never let a Google consent/redirect page become an apparent article.
+        # The feed link is discovery metadata, not evidence.  A future decoder
+        # may resolve it to the publisher URL; until then it is excluded rather
+        # than being summarized as low-value pseudo-content.
+        if _is_google_news_relay(url):
+            mark_raw_item_status(session, raw_item.id, "filtered_out", "google_news_relay_unresolved")
+            log_processing(session, "raw_item", raw_item.id, "extract", "skip", "google_news_relay_unresolved")
+            log.info("extract_filtered", raw_item_id=raw_item.id, reason="google_news_relay_unresolved")
+            return
 
         # ── Extract ─────────────────────────────────────────────────────────
         extracted = extract_article(
@@ -178,6 +239,23 @@ def _process_item(raw_item_id: int) -> None:
                     f"no content extracted; sent to dead-letter after {current_retry} retries",
                 )
                 log.warning("extract_empty_dead_letter", url=url, retry=current_retry)
+            return
+
+        # Check again with the extracted title and description before storing
+        # expensive raw payloads or placing work in the AI queue.
+        admission = item_decision(
+            raw_item.source,
+            extracted.title or raw_item.title,
+            # The RSS teaser can look editorial while the article itself
+            # discloses sponsorship or affiliate links.  Check the extracted
+            # body before we retain it or send it to Ollama.
+            f"{extracted.description or raw_item.snippet or ''} {extracted.text_content or ''}",
+            raw_item.published_at,
+        )
+        if not admission.accepted:
+            mark_raw_item_status(session, raw_item.id, "filtered_out", admission.reason)
+            log_processing(session, "raw_item", raw_item.id, "extract", "skip", admission.reason)
+            log.info("extract_filtered", raw_item_id=raw_item.id, reason=admission.reason)
             return
 
         # ── Deduplication by content hash ────────────────────────────────────
@@ -255,7 +333,14 @@ def _process_item(raw_item_id: int) -> None:
 
         raw_item.next_retry_at = None
         mark_raw_item_status(session, raw_item.id, "extracted")
-        enqueue("ai", str(article_id))
+        if queue_size("ai") < AI_QUEUE_MAX_PENDING:
+            # Do not publish an AI job before this transaction is committed.
+            # Otherwise the AI worker can consume it immediately and report
+            # article_not_found, permanently losing the enrichment request.
+            ai_article_id = article_id
+        else:
+            mark_raw_item_status(session, raw_item.id, "ai_pending", "waiting_for_ai_capacity")
+            log.info("extract_ai_deferred", article_id=article_id, queue_size=queue_size("ai"))
 
         duration_ms = int((time.monotonic() - t0) * 1000)
         log_processing(session, "raw_item", raw_item.id, "extract", "success",
@@ -263,6 +348,9 @@ def _process_item(raw_item_id: int) -> None:
                        duration_ms=duration_ms)
         log.info("extracted_ok", url=url, article_id=article_id,
                  extractor=extracted.extractor_used, words=extracted.word_count, ms=duration_ms)
+
+    if ai_article_id is not None:
+        enqueue("ai", str(ai_article_id))
 
 
 def main():
@@ -275,6 +363,7 @@ def main():
             raw = dequeue("extract", timeout=5)
             if raw is None:
                 _enqueue_due_retries()
+                _recover_committed_new_items()
                 continue
             payload, retry_count = _decode_retry_payload(raw)
             raw_item_id = int(payload.strip())

@@ -1,0 +1,22 @@
+# Sources identified for Helix but intentionally not activated until their
+# access prerequisites or an extraction implementation are available.  Keeping
+# them explicit prevents a future switch to unverified commercial relays.
+sources:
+  - name: Banque de France Webstat
+    category: finance
+    country: FR
+    status: requires_api_key
+    url: https://webstat.banque-france.fr/
+    reason: Free public statistical service, but each client needs an account and API key.
+  - name: Légifrance API (PISTE)
+    category: regulation
+    country: FR
+    status: requires_api_key
+    url: https://www.legifrance.gouv.fr/contenu/pied-de-page/open-data-et-api
+    reason: Free API after PISTE registration; needs a scoped legal-change collector.
+  - name: France Diplomatie
+    category: geopolitics
+    country: FR
+    status: requires_collector
+    url: https://www.diplomatie.gouv.fr/fr/presse/decouvrir-et-s-informer/actualites
+    reason: Official current-affairs page; no stable machine-readable feed was validated.

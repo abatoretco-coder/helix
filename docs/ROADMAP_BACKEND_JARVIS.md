@@ -20,7 +20,8 @@ Construire un backend news personnalise, stable et interfacable, expose via cont
 - [x] API FastAPI en production docker
 - [x] Workers collect/extract/ai actifs
 - [x] Indexation Meilisearch disponible
-- [x] Ollama disponible pour embeddings + generation
+- [x] Provider OpenAI-compatible disponible pour embeddings + generation quand active
+- [ ] Compteurs et limites de cout OpenAI par endpoint avant toute activation IA de fond
 
 ### Phase B - Contrat API Helix <-> Jarvis (terminee cote specification)
 - [x] Contrat formalise dans docs/API_CONTRACT_HELIX_JARVIS.md
@@ -32,7 +33,7 @@ Construire un backend news personnalise, stable et interfacable, expose via cont
 ### Phase C - Automatisation enrichissement data (partiellement executee)
 - [x] Ingestion multi-source active (RSS, HN, GitHub, GNews, Reddit)
 - [x] Extraction full-text active avec fallback
-- [x] Pipeline AI active (resume, score, embedding)
+- [x] Pipeline AI activable (resume, score, embedding) via provider OpenAI-compatible
 - [x] Normalisation stricte des sources invalides (ex Reddit libelles mal formes)
 - [ ] Scheduler central explicite (cron/celery beat) et SLOs
 

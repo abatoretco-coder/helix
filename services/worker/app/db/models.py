@@ -95,6 +95,7 @@ class Article(Base):
     raw_html_path     = Column(Text)
     raw_json_path     = Column(Text)
     extraction_status = Column(Text, default="success")
+    archived_at       = Column(DateTime)
     created_at        = Column(DateTime, server_default=func.now())
     updated_at        = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
